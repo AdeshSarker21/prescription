@@ -104,6 +104,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::patch('/medicines-categories/{category}', [\App\Http\Controllers\Admin\MedicineCategoryController::class, 'update'])->name('medicines.categories.update');
     Route::delete('/medicines-categories/{category}', [\App\Http\Controllers\Admin\MedicineCategoryController::class, 'destroy'])->name('medicines.categories.destroy');
 
+    // Medicine Suggestions
+    Route::get('/medicine-suggestions', [\App\Http\Controllers\Admin\MedicineSuggestionController::class, 'index'])->name('medicine-suggestions.index');
+    Route::get('/medicine-suggestions/{medicine_suggestion}/edit', [\App\Http\Controllers\Admin\MedicineSuggestionController::class, 'edit'])->name('medicine-suggestions.edit');
+    Route::patch('/medicine-suggestions/{medicine_suggestion}', [\App\Http\Controllers\Admin\MedicineSuggestionController::class, 'update'])->name('medicine-suggestions.update');
+    Route::patch('/medicine-suggestions/{medicine_suggestion}/approve', [\App\Http\Controllers\Admin\MedicineSuggestionController::class, 'approve'])->name('medicine-suggestions.approve');
+    Route::patch('/medicine-suggestions/{medicine_suggestion}/reject', [\App\Http\Controllers\Admin\MedicineSuggestionController::class, 'reject'])->name('medicine-suggestions.reject');
+    Route::delete('/medicine-suggestions/{medicine_suggestion}', [\App\Http\Controllers\Admin\MedicineSuggestionController::class, 'destroy'])->name('medicine-suggestions.destroy');
+
     // Master Data
     Route::get('/master-data/{module}', [\App\Http\Controllers\Admin\MasterDataController::class, 'index'])->name('master-data.index');
     Route::get('/master-data/{module}/create', [\App\Http\Controllers\Admin\MasterDataController::class, 'create'])->name('master-data.create');
@@ -335,6 +343,15 @@ Route::middleware(['auth', 'verified', 'role:assistant', 'assistant.access'])->p
 
     // Doctor availability
     Route::get('/doctor/{doctor}/availability', [\App\Http\Controllers\Assistant\AppointmentController::class, 'availability'])->name('doctor.availability');
+
+    // Clinical Seals
+    Route::get('/clinical-seals', [\App\Http\Controllers\Assistant\ClinicalSealController::class, 'index'])->name('clinical-seals.index');
+    Route::get('/clinical-seals/create', [\App\Http\Controllers\Assistant\ClinicalSealController::class, 'create'])->name('clinical-seals.create');
+    Route::post('/clinical-seals', [\App\Http\Controllers\Assistant\ClinicalSealController::class, 'store'])->name('clinical-seals.store');
+    Route::get('/clinical-seals/{id}/edit', [\App\Http\Controllers\Assistant\ClinicalSealController::class, 'edit'])->name('clinical-seals.edit');
+    Route::patch('/clinical-seals/{id}', [\App\Http\Controllers\Assistant\ClinicalSealController::class, 'update'])->name('clinical-seals.update');
+    Route::delete('/clinical-seals/{id}', [\App\Http\Controllers\Assistant\ClinicalSealController::class, 'destroy'])->name('clinical-seals.destroy');
+    Route::post('/clinical-seals/{id}/toggle-status', [\App\Http\Controllers\Assistant\ClinicalSealController::class, 'toggleStatus'])->name('clinical-seals.toggle-status');
 
     // Notifications
     Route::post('/notifications/mark-all-read', function () {

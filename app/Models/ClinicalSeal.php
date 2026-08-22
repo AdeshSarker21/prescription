@@ -12,6 +12,7 @@ class ClinicalSeal extends Model
         'details',
         'slug',
         'created_by',
+        'doctor_id',
         'status',
         'is_active',
         'used_count',
@@ -35,6 +36,11 @@ class ClinicalSeal extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function doctor()
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
     }
 
     public function prescriptionItems()

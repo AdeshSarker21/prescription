@@ -69,7 +69,9 @@ class ClinicalSealController extends Controller
         $details = trim($request->input('details', ''));
         $normalizedName = mb_strtolower($name);
 
-        $existing = ClinicalSeal::whereRaw('LOWER(name) = ?', [$normalizedName])->first();
+        $existing = ClinicalSeal::whereRaw('LOWER(name) = ?', [$normalizedName])
+            ->where('doctor_id', auth()->id())
+            ->first();
 
         if ($existing) {
             return response()->json([
@@ -81,6 +83,7 @@ class ClinicalSealController extends Controller
         $item = ClinicalSeal::create([
             'name' => $name,
             'details' => $details ?: null,
+            'doctor_id' => auth()->id(),
             'created_by' => auth()->id(),
             'used_count' => 1,
         ]);
@@ -107,6 +110,7 @@ class ClinicalSealController extends Controller
         $normalizedName = mb_strtolower($name);
 
         $existing = ClinicalSeal::whereRaw('LOWER(name) = ?', [$normalizedName])
+            ->where('doctor_id', auth()->id())
             ->where('id', '!=', $clinicalSeal->id)
             ->first();
 
