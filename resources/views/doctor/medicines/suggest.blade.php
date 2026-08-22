@@ -41,13 +41,13 @@
                 </div>
                 <div>
                     <x-input-label for="category" value="Category" />
-                    <select id="category" name="category" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                    <select id="category" name="category_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                         <option value="">Select Category</option>
                         @foreach($categories as $category)
-                        <option value="{{ $category }}" @selected(old('category') == $category)>{{ $category }}</option>
+                        <option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>{{ $category->name }}</option>
                         @endforeach
                     </select>
-                    <x-input-error :messages="$errors->get('category')" class="mt-1" />
+                    <x-input-error :messages="$errors->get('category_id')" class="mt-1" />
                 </div>
                 <div>
                     <x-input-label for="company_name" value="Company Name" />

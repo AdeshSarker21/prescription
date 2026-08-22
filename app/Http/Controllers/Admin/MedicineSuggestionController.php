@@ -8,6 +8,7 @@ use App\Models\MedicineCategory;
 use App\Models\MedicineSuggestion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class MedicineSuggestionController extends Controller
@@ -62,36 +63,46 @@ class MedicineSuggestionController extends Controller
 
     public function approve(MedicineSuggestion $medicine_suggestion): RedirectResponse
     {
-        $duplicate = Medicine::whereRaw("LOWER(brand_name) = ?", [mb_strtolower($medicine_suggestion->name)])
-            ->orWhereRaw("LOWER(name) = ?", [mb_strtolower($medicine_suggestion->name)])
-            ->first();
+        return DB::transaction(function () use ($medicine_suggestion) {
+            $name = trim($medicine_suggestion->name);
+            $normalizedName = mb_strtolower($name);
 
-        if ($duplicate) {
-            $medicine_suggestion->update(['status' => 'approved', 'admin_notes' => 'Already exists as medicine #' . $duplicate->id]);
+            $duplicate = Medicine::whereRaw("LOWER(COALESCE(brand_name, name)) = ?", [$normalizedName])
+                ->orWhereRaw("LOWER(name) = ?", [$normalizedName])
+                ->first();
+
+            if ($duplicate) {
+                $medicine_suggestion->update([
+                    'status' => MedicineSuggestion::STATUS_APPROVED,
+                    'medicine_id' => $duplicate->id,
+                    'admin_notes' => 'Already exists as medicine #' . $duplicate->id . '. Linked.',
+                ]);
+
+                return redirect()->route('admin.medicine-suggestions.index')
+                    ->with('success', 'Marked approved. Duplicate medicine already exists (ID: ' . $duplicate->id . '). Linked to suggestion.');
+            }
+
+            $medicine = Medicine::create([
+                'name'         => $name,
+                'brand_name'   => $name,
+                'generic_name' => $medicine_suggestion->generic_name,
+                'strength'     => $medicine_suggestion->strength,
+                'category_id'  => $medicine_suggestion->category_id,
+                'company_name' => $medicine_suggestion->company_name,
+                'is_global'    => true,
+                'created_by'   => $medicine_suggestion->doctor_id,
+                'status'       => 'active',
+            ]);
+
+            $medicine_suggestion->update([
+                'status'      => MedicineSuggestion::STATUS_APPROVED,
+                'medicine_id' => $medicine->id,
+                'admin_notes' => 'Approved and created as Medicine #' . $medicine->id,
+            ]);
 
             return redirect()->route('admin.medicine-suggestions.index')
-                ->with('success', 'Marked approved. Duplicate medicine already exists (ID: ' . $duplicate->id . ').');
-        }
-
-        $medicine = Medicine::create([
-            'name'         => $medicine_suggestion->name,
-            'brand_name'   => $medicine_suggestion->name,
-            'generic_name' => $medicine_suggestion->generic_name,
-            'strength'     => $medicine_suggestion->strength,
-            'category_id'  => $medicine_suggestion->category_id,
-            'company_name' => $medicine_suggestion->company_name,
-            'is_global'    => true,
-            'created_by'   => $medicine_suggestion->doctor_id,
-            'status'       => 'active',
-        ]);
-
-        $medicine_suggestion->update([
-            'status'      => 'approved',
-            'admin_notes' => 'Approved and added as Medicine #' . $medicine->id,
-        ]);
-
-        return redirect()->route('admin.medicine-suggestions.index')
-            ->with('success', 'Medicine "' . $medicine->name . '" created and suggestion approved.');
+                ->with('success', 'Medicine "' . $medicine->name . '" created and suggestion approved.');
+        });
     }
 
     public function reject(MedicineSuggestion $medicine_suggestion): RedirectResponse

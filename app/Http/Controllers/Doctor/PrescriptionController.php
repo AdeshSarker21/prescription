@@ -10,6 +10,7 @@ use App\Models\Complaint;
 use App\Models\InvestigationGroup;
 use App\Models\LaboratoryTest;
 use App\Models\Medicine;
+use App\Models\MedicineSuggestion;
 use App\Models\MedicalHistoryCondition;
 use App\Models\Patient;
 use App\Models\PatientMedicalHistory;
@@ -386,6 +387,30 @@ class PrescriptionController extends Controller
             if (empty($item['medicine_name'])) {
                 continue;
             }
+
+            $suggestionId = null;
+
+            if (empty($item['medicine_id']) && !empty($item['medicine_name'])) {
+                $normalizedName = mb_strtolower(trim($item['medicine_name']));
+                $existingSuggestion = MedicineSuggestion::whereRaw('LOWER(name) = ?', [$normalizedName])
+                    ->where('doctor_id', auth()->id())
+                    ->where('status', '!=', MedicineSuggestion::STATUS_REJECTED)
+                    ->first();
+
+                if (!$existingSuggestion) {
+                    $suggestion = MedicineSuggestion::create([
+                        'name' => trim($item['medicine_name']),
+                        'strength' => $item['strength'] ?? null,
+                        'doctor_id' => auth()->id(),
+                        'status' => MedicineSuggestion::STATUS_PENDING,
+                        'reason' => 'Auto-suggested from prescription (missing medicine)',
+                    ]);
+                    $suggestionId = $suggestion->id;
+                } else {
+                    $suggestionId = $existingSuggestion->id;
+                }
+            }
+
             $prescription->items()->create([
                 'medicine_id' => $item['medicine_id'] ?? null,
                 'medicine_name' => $item['medicine_name'],
@@ -396,6 +421,7 @@ class PrescriptionController extends Controller
                 'seal_id' => $item['seal_id'] ?? null,
                 'seal_text' => $item['seal_text'] ?? null,
                 'seal_details' => $item['seal_details'] ?? null,
+                'medicine_suggestion_id' => $suggestionId,
                 'type' => 'medicine',
                 'sort_order' => $sortOrder++,
             ]);
@@ -860,6 +886,30 @@ class PrescriptionController extends Controller
             if (empty($item['medicine_name'])) {
                 continue;
             }
+
+            $suggestionId = null;
+
+            if (empty($item['medicine_id']) && !empty($item['medicine_name'])) {
+                $normalizedName = mb_strtolower(trim($item['medicine_name']));
+                $existingSuggestion = MedicineSuggestion::whereRaw('LOWER(name) = ?', [$normalizedName])
+                    ->where('doctor_id', auth()->id())
+                    ->where('status', '!=', MedicineSuggestion::STATUS_REJECTED)
+                    ->first();
+
+                if (!$existingSuggestion) {
+                    $suggestion = MedicineSuggestion::create([
+                        'name' => trim($item['medicine_name']),
+                        'strength' => $item['strength'] ?? null,
+                        'doctor_id' => auth()->id(),
+                        'status' => MedicineSuggestion::STATUS_PENDING,
+                        'reason' => 'Auto-suggested from prescription (missing medicine)',
+                    ]);
+                    $suggestionId = $suggestion->id;
+                } else {
+                    $suggestionId = $existingSuggestion->id;
+                }
+            }
+
             $prescription->items()->create([
                 'medicine_id' => $item['medicine_id'] ?? null,
                 'medicine_name' => $item['medicine_name'],
@@ -870,6 +920,7 @@ class PrescriptionController extends Controller
                 'seal_id' => $item['seal_id'] ?? null,
                 'seal_text' => $item['seal_text'] ?? null,
                 'seal_details' => $item['seal_details'] ?? null,
+                'medicine_suggestion_id' => $suggestionId,
                 'type' => 'medicine',
                 'sort_order' => $sortOrder++,
             ]);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PrescriptionItem extends Model
 {
@@ -14,6 +15,7 @@ class PrescriptionItem extends Model
         'seal_id',
         'seal_text',
         'seal_details',
+        'medicine_suggestion_id',
         'sort_order',
         'dosage',
         'frequency',
@@ -25,19 +27,24 @@ class PrescriptionItem extends Model
         'refills',
     ];
 
-    public function prescription()
+    public function prescription(): BelongsTo
     {
         return $this->belongsTo(Prescription::class);
     }
 
-    public function medicine()
+    public function medicine(): BelongsTo
     {
         return $this->belongsTo(Medicine::class);
     }
 
-    public function seal()
+    public function seal(): BelongsTo
     {
         return $this->belongsTo(ClinicalSeal::class, 'seal_id');
+    }
+
+    public function medicineSuggestion(): BelongsTo
+    {
+        return $this->belongsTo(MedicineSuggestion::class, 'medicine_suggestion_id');
     }
 
     public function isMedicine(): bool

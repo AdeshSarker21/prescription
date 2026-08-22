@@ -123,4 +123,56 @@ class MedicineController extends Controller
 
         return response()->json($medicines);
     }
+
+    public function quickSuggest(Request $request): JsonResponse
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $name = trim($request->input('name'));
+        $normalizedName = mb_strtolower($name);
+
+        $existingSuggestion = MedicineSuggestion::whereRaw('LOWER(name) = ?', [$normalizedName])
+            ->where('doctor_id', auth()->id())
+            ->where('status', '!=', 'rejected')
+            ->first();
+
+        if ($existingSuggestion) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Suggestion already exists with status: ' . ucfirst($existingSuggestion->status),
+                'suggestion_id' => $existingSuggestion->id,
+                'status' => $existingSuggestion->status,
+            ]);
+        }
+
+        $duplicateMedicine = Medicine::whereRaw('LOWER(name) = ?', [$normalizedName])
+            ->orWhereRaw('LOWER(brand_name) = ?', [$normalizedName])
+            ->first();
+
+        if ($duplicateMedicine) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Medicine already exists in the database.',
+                'medicine_id' => $duplicateMedicine->id,
+            ]);
+        }
+
+        $suggestion = MedicineSuggestion::create([
+            'name' => $name,
+            'strength' => $request->input('strength'),
+            'doctor_id' => auth()->id(),
+            'status' => MedicineSuggestion::STATUS_PENDING,
+            'reason' => 'Quick suggested from prescription form',
+        ]);
+
+        User::role('admin')->each(fn ($admin) => $admin->notify(new MedicineSuggestionCreated($suggestion)));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Medicine suggested successfully. Admin will review it.',
+            'suggestion_id' => $suggestion->id,
+        ]);
+    }
 }

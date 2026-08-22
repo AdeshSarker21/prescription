@@ -229,6 +229,7 @@ Route::middleware(['auth', 'verified', 'role:doctor', 'subscription'])->prefix('
 
     // Medicines
     Route::get('/medicines/search', [\App\Http\Controllers\Doctor\MedicineController::class, 'search'])->name('medicines.search');
+    Route::post('/medicines/quick-suggest', [\App\Http\Controllers\Doctor\MedicineController::class, 'quickSuggest'])->name('medicines.quickSuggest');
     Route::get('/medicines', [\App\Http\Controllers\Doctor\MedicineController::class, 'index'])->name('medicines.index');
     Route::get('/medicines/{medicine}', [\App\Http\Controllers\Doctor\MedicineController::class, 'show'])->name('medicines.show');
     Route::get('/medicines/suggest/create', [\App\Http\Controllers\Doctor\MedicineController::class, 'suggest'])->name('medicines.suggest');

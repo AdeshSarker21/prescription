@@ -541,7 +541,12 @@
                                             </div>
                                         </template>
                                         <div x-show="medResults.length === 0 && !medLoading && (item.medicine_name || '').length >= 2" class="med-no-results">
-                                            No medicines found
+                                            <div style="margin-bottom:6px;">No medicines found</div>
+                                            <button type="button" @click="quickSuggestMedicine(index)" style="padding:5px 12px;font-size:11px;font-weight:600;border:none;border-radius:6px;cursor:pointer;background:#059669;color:white;display:inline-flex;align-items:center;gap:4px;transition:background 0.2s;">
+                                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                                Suggest this medicine
+                                            </button>
+                                            <div x-show="item._suggestStatus" x-text="item._suggestStatus" style="margin-top:4px;font-size:10px;color:#059669;"></div>
                                         </div>
                                     </div>
                                 </td>
@@ -999,6 +1004,36 @@
             medSelectHighlighted(index) {
                 if (this.medHighlighted >= 0 && this.medHighlighted < this.medResults.length) {
                     this.medSelect(index, this.medResults[this.medHighlighted]);
+                }
+            },
+            async quickSuggestMedicine(index) {
+                const name = (this.items[index].medicine_name || '').trim();
+                if (!name) return;
+
+                this.items[index]._suggestStatus = 'Submitting...';
+
+                try {
+                    const res = await fetch('{{ route("doctor.medicines.quickSuggest") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({ name: name, strength: this.items[index].strength || '' }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.items[index]._suggestStatus = data.status === 'pending' ? 'Suggested (pending admin review)' : data.message;
+                        this.items[index]._suggestStatusColor = '#059669';
+                    } else {
+                        this.items[index]._suggestStatus = data.message;
+                        this.items[index]._suggestStatusColor = '#dc2626';
+                    }
+                } catch (e) {
+                    this.items[index]._suggestStatus = 'Failed to suggest. Please try again.';
+                    this.items[index]._suggestStatusColor = '#dc2626';
                 }
             },
             openSealModal() {
