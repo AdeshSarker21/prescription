@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('serial_sessions', function (Blueprint $table) {
+        if (!Schema::hasTable('serial_sessions')) {
+            Schema::create('serial_sessions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('doctor_id')->constrained('users')->cascadeOnDelete();
             $table->date('session_date');
@@ -22,8 +23,10 @@ return new class extends Migration
 
             $table->unique(['doctor_id', 'session_date']);
         });
+        }
 
-        Schema::create('patient_queues', function (Blueprint $table) {
+        if (!Schema::hasTable('patient_queues')) {
+            Schema::create('patient_queues', function (Blueprint $table) {
             $table->id();
             $table->foreignId('serial_session_id')->constrained('serial_sessions')->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained('users')->cascadeOnDelete();
@@ -42,8 +45,10 @@ return new class extends Migration
             $table->index(['serial_session_id', 'status']);
             $table->index(['doctor_id', 'status']);
         });
+        }
 
-        Schema::create('smart_serial_settings', function (Blueprint $table) {
+        if (!Schema::hasTable('smart_serial_settings')) {
+            Schema::create('smart_serial_settings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('doctor_id')->constrained('users')->cascadeOnDelete();
             $table->boolean('auto_call_next')->default(false);
@@ -56,6 +61,7 @@ return new class extends Migration
 
             $table->unique('doctor_id');
         });
+        }
     }
 
     public function down(): void

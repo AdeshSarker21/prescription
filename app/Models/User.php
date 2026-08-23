@@ -138,6 +138,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the user module pivot records for this user.
+     */
+    public function userModules()
+    {
+        return $this->hasMany(UserModule::class);
+    }
+
+    /**
      * Get the active modules enabled for this user.
      */
     public function activeModules()

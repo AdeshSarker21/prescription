@@ -167,8 +167,12 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     // Module Management
     Route::get('/modules', [\App\Http\Controllers\Admin\ModuleController::class, 'index'])->name('modules.index');
+    Route::post('/modules/{module}/toggle-global', [\App\Http\Controllers\Admin\ModuleController::class, 'toggleGlobal'])->name('modules.toggle-global');
     Route::get('/modules/{module}/doctors', [\App\Http\Controllers\Admin\ModuleController::class, 'doctorSettings'])->name('modules.doctors');
     Route::patch('/modules/{module}/doctors/{doctorId}', [\App\Http\Controllers\Admin\ModuleController::class, 'updateDoctorModule'])->name('modules.doctors.update');
+    Route::post('/modules/{module}/doctors/bulk-toggle', [\App\Http\Controllers\Admin\ModuleController::class, 'bulkToggleDoctorModule'])->name('modules.doctors.bulk-toggle');
+    Route::get('/modules/{module}/users', [\App\Http\Controllers\Admin\ModuleController::class, 'userModules'])->name('modules.users');
+    Route::patch('/modules/{module}/users/{userId}', [\App\Http\Controllers\Admin\ModuleController::class, 'toggleUserModule'])->name('modules.users.toggle');
 
     // Module Permission Management
     Route::get('/modules/{moduleSlug}/permissions', [\App\Http\Controllers\Admin\ModulePermissionController::class, 'index'])->name('modules.permissions.index');

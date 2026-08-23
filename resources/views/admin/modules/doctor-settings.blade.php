@@ -39,8 +39,26 @@
 
     {{-- Doctor Table --}}
     <div class="glass-card rounded-xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-white/5">
+        <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-white/90">Doctor Access</h2>
+            <div class="flex items-center gap-2">
+                <form action="{{ route('admin.modules.doctors.bulk-toggle', $moduleKey) }}" method="POST" class="inline-block">
+                    @csrf
+                    <input type="hidden" name="enabled" value="1">
+                    <button type="submit" onclick="return confirm('Enable this module for ALL doctors?')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Enable All
+                    </button>
+                </form>
+                <form action="{{ route('admin.modules.doctors.bulk-toggle', $moduleKey) }}" method="POST" class="inline-block">
+                    @csrf
+                    <input type="hidden" name="enabled" value="0">
+                    <button type="submit" onclick="return confirm('Disable this module for ALL doctors?')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l2-2m-2 2l-2-2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Disable All
+                    </button>
+                </form>
+            </div>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full">

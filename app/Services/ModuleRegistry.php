@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\DoctorFeatureSetting;
+use App\Models\Module;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
@@ -14,6 +15,25 @@ class ModuleRegistry
     public function __construct()
     {
         $this->modules = config('modules.modules', []);
+        $this->loadDbStatus();
+    }
+
+    /**
+     * Load active status from DB modules table and merge into config.
+     */
+    protected function loadDbStatus(): void
+    {
+        try {
+            $dbModules = Module::all()->keyBy('slug');
+            foreach ($this->modules as $key => &$module) {
+                if (isset($dbModules[$key])) {
+                    $module['enabled'] = $dbModules[$key]->is_active;
+                }
+            }
+            unset($module);
+        } catch (\Exception $e) {
+            // Table may not exist yet, fall back to config
+        }
     }
 
     /**
