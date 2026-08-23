@@ -66,7 +66,7 @@
         <div class="grid grid-cols-4 gap-4">
             <div class="bg-white rounded-xl shadow p-4 text-center"><div class="text-3xl font-bold text-blue-600">{{ $stats['total'] }}</div><div class="text-sm text-gray-500">Total</div></div>
             <div class="bg-white rounded-xl shadow p-4 text-center"><div class="text-3xl font-bold text-yellow-500">{{ $stats['waiting'] }}</div><div class="text-sm text-gray-500">Waiting</div></div>
-            <div class="bg-white rounded-xl shadow p-4 text-center"><div class="text-3xl font-bold text-orange-500">{{ $stats['called'] + $stats['in_consultation'] }}</div><div class="text-sm text-gray-500">In Progress</div></div>
+            <div class="bg-white rounded-xl shadow p-4 text-center"><div class="text-3xl font-bold text-orange-500">{{ $stats['calling'] + $stats['inside'] }}</div><div class="text-sm text-gray-500">In Progress</div></div>
             <div class="bg-white rounded-xl shadow p-4 text-center"><div class="text-3xl font-bold text-green-600">{{ $stats['completed'] }}</div><div class="text-sm text-gray-500">Completed</div></div>
         </div>
 
@@ -120,8 +120,8 @@
                     </thead>
                     <tbody class="divide-y">
                         @forelse($queue as $item)
-                        <tr class="{{ $item->status === 'called' ? 'bg-yellow-50' : ($item->status === 'in_consultation' ? 'bg-blue-50' : '') }}">
-                            <td class="px-4 py-3 font-bold text-lg">{{ $item->serial_number }}</td>
+                        <tr class="{{ $item->status === 'calling' ? 'bg-yellow-50' : ($item->status === 'inside' ? 'bg-blue-50' : ($item->status === 'preparing' ? 'bg-purple-50' : '')) }}">
+                            <td class="px-4 py-3 font-bold text-lg">{{ $item->formatted_serial ?? str_pad($item->serial_number, 3, '0', STR_PAD_LEFT) }}</td>
                             <td class="px-4 py-3">{{ $item->patient->name ?? 'N/A' }}</td>
                             <td class="px-4 py-3">
                                 @if($item->priority === 'emergency')
@@ -137,16 +137,20 @@
                             <td class="px-4 py-3">
                                 @if($item->status === 'waiting')
                                     <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">Waiting</span>
-                                @elseif($item->status === 'called')
-                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-bold">Called</span>
-                                @elseif($item->status === 'in_consultation')
-                                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">In Consultation</span>
+                                @elseif($item->status === 'preparing')
+                                    <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">Preparing</span>
+                                @elseif($item->status === 'calling')
+                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-bold">Calling</span>
+                                @elseif($item->status === 'inside')
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">Inside</span>
                                 @elseif($item->status === 'completed')
                                     <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">Completed</span>
+                                @elseif($item->status === 'skipped')
+                                    <span class="px-2 py-1 bg-gray-200 text-gray-500 rounded-full text-xs">Skipped</span>
                                 @elseif($item->status === 'cancelled')
                                     <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">Cancelled</span>
-                                @elseif($item->status === 'no_show')
-                                    <span class="px-2 py-1 bg-gray-200 text-gray-500 rounded-full text-xs">No Show</span>
+                                @elseif($item->status === 'emergency')
+                                    <span class="px-2 py-1 bg-red-200 text-red-800 rounded-full text-xs font-bold">Emergency</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-gray-500">{{ $item->created_at->format('h:i A') }}</td>
@@ -158,37 +162,37 @@
                                             <button class="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600">Call</button>
                                         </form>
                                     @endif
-                                    @if($item->status === 'called' && in_array('call_next', $permissions))
+                                    @if($item->status === 'calling' && in_array('call_next', $permissions))
                                         <form method="POST" action="{{ route('doctor.smart-serial.start-consultation', $item->id) }}">
                                             @csrf @method('PATCH')
                                             <button class="px-2 py-1 bg-indigo-500 text-white rounded text-xs hover:bg-indigo-600">Start</button>
                                         </form>
                                     @endif
-                                    @if($item->status === 'in_consultation' && in_array('complete', $permissions))
+                                    @if($item->status === 'inside' && in_array('complete', $permissions))
                                         <form method="POST" action="{{ route('doctor.smart-serial.complete', $item->id) }}">
                                             @csrf @method('PATCH')
                                             <button class="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600">Done</button>
                                         </form>
                                     @endif
-                                    @if(in_array('cancel_serial', $permissions) && !in_array($item->status, ['completed','cancelled']))
+                                    @if(in_array('cancel_serial', $permissions) && !in_array($item->status, ['completed','cancelled','skipped']))
                                         <form method="POST" action="{{ route('doctor.smart-serial.cancel', $item->id) }}">
                                             @csrf @method('DELETE')
                                             <button class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600">X</button>
                                         </form>
                                     @endif
-                                    @if(in_array('emergency', $permissions) && $item->priority !== 'emergency' && !in_array($item->status, ['completed','cancelled']))
+                                    @if(in_array('emergency', $permissions) && $item->priority !== 'emergency' && !in_array($item->status, ['completed','cancelled','skipped']))
                                         <form method="POST" action="{{ route('doctor.smart-serial.emergency', $item->id) }}">
                                             @csrf @method('PATCH')
                                             <button class="px-2 py-1 bg-red-700 text-white rounded text-xs hover:bg-red-800">!</button>
                                         </form>
                                     @endif
-                                    @if(in_array('recall', $permissions) && in_array($item->status, ['called','completed']))
+                                    @if(in_array('recall', $permissions) && in_array($item->status, ['calling','completed']))
                                         <form method="POST" action="{{ route('doctor.smart-serial.recall', $item->id) }}">
                                             @csrf @method('PATCH')
                                             <button class="px-2 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600">Recall</button>
                                         </form>
                                     @endif
-                                    @if(in_array('skip', $permissions) && $item->status === 'called')
+                                    @if(in_array('skip', $permissions) && $item->status === 'calling')
                                         <form method="POST" action="{{ route('doctor.smart-serial.skip', $item->id) }}">
                                             @csrf @method('PATCH')
                                             <button class="px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600">Skip</button>

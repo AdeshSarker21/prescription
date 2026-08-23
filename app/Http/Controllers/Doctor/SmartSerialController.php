@@ -37,7 +37,11 @@ class SmartSerialController extends Controller
             $sessionQuery->where('chamber_id', $activeChamberId);
         }
         $session = $sessionQuery->first();
-        $stats = ['total'=>0,'waiting'=>0,'called'=>0,'in_consultation'=>0,'completed'=>0,'cancelled'=>0,'no_show'=>0];
+        $stats = [
+            'total' => 0, 'waiting' => 0, 'preparing' => 0, 'calling' => 0,
+            'inside' => 0, 'completed' => 0, 'skipped' => 0,
+            'cancelled' => 0, 'emergency' => 0,
+        ];
         $nextPatient = null;
         $currentCalled = null;
         $emergencyCount = 0;
@@ -48,24 +52,26 @@ class SmartSerialController extends Controller
         if ($session) {
             $queue = $session->patientQueues()->with('patient')->orderBy('serial_number')->get();
             $stats = [
-                'total'            => $queue->count(),
-                'waiting'          => $queue->where('status','waiting')->count(),
-                'called'           => $queue->where('status','called')->count(),
-                'in_consultation'  => $queue->where('status','in_consultation')->count(),
-                'completed'        => $queue->where('status','completed')->count(),
-                'cancelled'        => $queue->where('status','cancelled')->count(),
-                'no_show'          => $queue->where('status','no_show')->count(),
+                'total'       => $queue->count(),
+                'waiting'     => $queue->where('status', 'waiting')->count(),
+                'preparing'   => $queue->where('status', 'preparing')->count(),
+                'calling'     => $queue->where('status', 'calling')->count(),
+                'inside'      => $queue->where('status', 'inside')->count(),
+                'completed'   => $queue->where('status', 'completed')->count(),
+                'skipped'     => $queue->where('status', 'skipped')->count(),
+                'cancelled'   => $queue->where('status', 'cancelled')->count(),
+                'emergency'   => $queue->where('status', 'emergency')->count(),
             ];
-            $emergencyCount = $queue->where('priority','emergency')->count();
-            $currentCalled = $queue->where('status','called')->first();
-            $nextSerial = $session->current_serial + 1;
+            $emergencyCount = $queue->where('priority', 'emergency')->count();
+            $currentCalled = $queue->where('status', 'calling')->first();
+            $nextSerial = $session->daily_serial_counter + 1;
 
-            foreach (['emergency','urgent','vip','normal'] as $p) {
-                $nextPatient = $queue->where('status','waiting')->where('priority',$p)->sortBy('serial_number')->first();
+            foreach (['emergency', 'urgent', 'vip', 'normal'] as $p) {
+                $nextPatient = $queue->where('status', 'waiting')->where('priority', $p)->sortBy('serial_number')->first();
                 if ($nextPatient) break;
             }
 
-            $completedPatients = $queue->where('status','completed')->filter(function ($item) {
+            $completedPatients = $queue->where('status', 'completed')->filter(function ($item) {
                 return $item->called_at && $item->completed_at;
             });
             if ($completedPatients->count() > 0) {
@@ -118,8 +124,17 @@ class SmartSerialController extends Controller
             $sessionQuery->where('chamber_id', $activeChamberId);
         }
         $session = $sessionQuery->first();
-        $nextSerial = $session ? $session->current_serial + 1 : 1;
-        return view('doctor.smart-serial.add-serial', compact('session', 'chambers', 'activeChamberId', 'nextSerial', 'doctor'));
+        $nextSerial = $session ? $session->daily_serial_counter + 1 : 1;
+
+        $settings = SmartSerialSetting::where('doctor_id', $doctorId)->first();
+        $prefix = $settings && $session ? $settings->getEffectivePrefix($session->chamber) : '';
+        $padding = $settings ? max(3, strlen((string) $settings->max_serial)) : 3;
+        $formattedPreview = str_pad($nextSerial, $padding, '0', STR_PAD_LEFT);
+        if ($prefix) {
+            $formattedPreview = "{$prefix}-{$formattedPreview}";
+        }
+
+        return view('doctor.smart-serial.add-serial', compact('session', 'chambers', 'activeChamberId', 'nextSerial', 'doctor', 'formattedPreview'));
     }
 
     public function index()
@@ -137,14 +152,23 @@ class SmartSerialController extends Controller
         $session = $sessionQuery->first();
 
         $queue = collect();
-        $stats = ['total'=>0,'waiting'=>0,'called'=>0,'in_consultation'=>0,'completed'=>0,'cancelled'=>0,'no_show'=>0];
+        $stats = [
+            'total' => 0, 'waiting' => 0, 'preparing' => 0, 'calling' => 0,
+            'inside' => 0, 'completed' => 0, 'skipped' => 0,
+            'cancelled' => 0, 'emergency' => 0,
+        ];
         if ($session) {
             $queue = $session->patientQueues()->with('patient')->orderBy('serial_number')->get();
             $stats = [
-                'total' => $queue->count(), 'waiting' => $queue->where('status','waiting')->count(),
-                'called' => $queue->where('status','called')->count(), 'in_consultation' => $queue->where('status','in_consultation')->count(),
-                'completed' => $queue->where('status','completed')->count(), 'cancelled' => $queue->where('status','cancelled')->count(),
-                'no_show' => $queue->where('status','no_show')->count(),
+                'total'     => $queue->count(),
+                'waiting'   => $queue->where('status', 'waiting')->count(),
+                'preparing' => $queue->where('status', 'preparing')->count(),
+                'calling'   => $queue->where('status', 'calling')->count(),
+                'inside'    => $queue->where('status', 'inside')->count(),
+                'completed' => $queue->where('status', 'completed')->count(),
+                'skipped'   => $queue->where('status', 'skipped')->count(),
+                'cancelled' => $queue->where('status', 'cancelled')->count(),
+                'emergency' => $queue->where('status', 'emergency')->count(),
             ];
         }
         $permissions = $doctor->getModulePermissions('smart_serial');
@@ -172,13 +196,17 @@ class SmartSerialController extends Controller
             return $this->denyAccess($request, 'This chamber does not belong to you.');
         }
 
+        $settings = SmartSerialSetting::where('doctor_id', $doctorId)->first();
+        $startingSerial = $settings ? $settings->getEffectiveStartingSerial($chamber) : 1;
+
         SerialSession::create([
             'doctor_id' => $doctorId,
             'chamber_id' => $chamber->id,
             'session_date' => $today,
             'session_label' => $request->input('label'),
             'status' => 'active',
-            'current_serial' => $chamber->daily_starting_number - 1,
+            'current_serial' => $startingSerial - 1,
+            'daily_serial_counter' => $startingSerial - 1,
             'total_patients' => 0,
             'started_at' => now(),
         ]);
@@ -187,40 +215,48 @@ class SmartSerialController extends Controller
 
     public function closeSession(Request $request, SerialSession $session)
     {
-        if (!Auth::user()->hasModulePermission('smart_serial','edit_serial') || $session->doctor_id !== Auth::id()) {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'edit_serial') || $session->doctor_id !== Auth::id()) {
             return $this->denyAccess($request);
         }
-        $session->update(['status'=>'closed','closed_at'=>now()]);
-        return back()->with('success','Session closed.');
+        $session->update(['status' => 'closed', 'closed_at' => now()]);
+        return back()->with('success', 'Session closed.');
     }
 
     public function pauseSession(Request $request, SerialSession $session)
     {
-        if (!Auth::user()->hasModulePermission('smart_serial','edit_serial') || $session->doctor_id !== Auth::id()) {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'edit_serial') || $session->doctor_id !== Auth::id()) {
             return $this->denyAccess($request);
         }
-        $session->update(['status'=>'paused']);
-        return back()->with('success','Session paused.');
+        $session->update(['status' => 'paused']);
+        return back()->with('success', 'Session paused.');
     }
 
     public function resumeSession(Request $request, SerialSession $session)
     {
-        if (!Auth::user()->hasModulePermission('smart_serial','edit_serial') || $session->doctor_id !== Auth::id()) {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'edit_serial') || $session->doctor_id !== Auth::id()) {
             return $this->denyAccess($request);
         }
-        $session->update(['status'=>'active']);
-        return back()->with('success','Session resumed.');
+        $session->update(['status' => 'active']);
+        return back()->with('success', 'Session resumed.');
     }
 
     public function addPatient(Request $request)
     {
-        if (!Auth::user()->hasModulePermission('smart_serial','create_serial')) {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'create_serial')) {
             return $this->denyAccess($request);
         }
-        $request->validate(['patient_id'=>'required|exists:patients,id','priority'=>'sometimes|string|in:normal,urgent,vip','notes'=>'nullable|string|max:500','appointment_id'=>'nullable|exists:appointments,id']);
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'priority' => 'sometimes|string|in:normal,urgent,vip',
+            'notes' => 'nullable|string|max:500',
+            'appointment_id' => 'nullable|exists:appointments,id',
+        ]);
         $doctorId = Auth::id();
-        $session = SerialSession::where('doctor_id',$doctorId)->where('session_date',now()->toDateString())->where('status','!=','closed')->first();
-        if (!$session) return back()->with('error','No active session.');
+        $session = SerialSession::where('doctor_id', $doctorId)
+            ->where('session_date', now()->toDateString())
+            ->where('status', '!=', 'closed')
+            ->first();
+        if (!$session) return back()->with('error', 'No active session.');
 
         $settings = SmartSerialSetting::where('doctor_id', $doctorId)->first();
         if ($settings) {
@@ -228,151 +264,165 @@ class SmartSerialController extends Controller
             if ($currentTotal >= $settings->max_queue_size) {
                 return back()->with('error', "Queue is full (max {$settings->max_queue_size}).");
             }
-            if ($session->current_serial >= $settings->max_serial) {
+            if ($session->daily_serial_counter >= $settings->max_serial) {
                 return back()->with('error', "Maximum serial number ({$settings->max_serial}) reached.");
             }
         }
 
-        if ($session->patientQueues()->where('patient_id',$request->patient_id)->whereIn('status',['waiting','called','in_consultation'])->exists()) {
-            return back()->with('error','Patient already in queue.');
+        if ($session->patientQueues()->where('patient_id', $request->patient_id)->whereIn('status', ['waiting', 'preparing', 'calling', 'inside', 'emergency'])->exists()) {
+            return back()->with('error', 'Patient already in queue.');
         }
-        $nextSerial = $session->current_serial + 1;
-        $session->patientQueues()->create(['doctor_id'=>$doctorId,'patient_id'=>$request->patient_id,'appointment_id'=>$request->appointment_id,'serial_number'=>$nextSerial,'status'=>'waiting','priority'=>$request->input('priority','normal'),'notes'=>$request->notes]);
-        $session->update(['current_serial'=>$nextSerial,'total_patients'=>$session->total_patients+1]);
-        return back()->with('success',"Added. Serial #{$nextSerial}");
+
+        // Generate formatted serial with duplicate prevention
+        $formattedSerial = $session->generateNextSerial($settings ?? SmartSerialSetting::firstOrCreate(['doctor_id' => $doctorId]));
+
+        // Ensure no duplicate (belt-and-suspenders check)
+        $attempts = 0;
+        while ($session->serialExists($formattedSerial) && $attempts < 10) {
+            $formattedSerial = $session->generateNextSerial($settings ?? SmartSerialSetting::find($doctorId));
+            $attempts++;
+        }
+
+        $nextSerial = $session->daily_serial_counter;
+
+        $queue = $session->patientQueues()->create([
+            'doctor_id' => $doctorId,
+            'patient_id' => $request->patient_id,
+            'appointment_id' => $request->appointment_id,
+            'serial_number' => $nextSerial,
+            'formatted_serial' => $formattedSerial,
+            'status' => PatientQueue::STATUS_WAITING,
+            'priority' => $request->input('priority', 'normal'),
+            'notes' => $request->notes,
+        ]);
+
+        $session->update(['total_patients' => $session->total_patients + 1]);
+
+        // Log initial status
+        $queue->logStatusChange(PatientQueue::STATUS_WAITING, 'doctor', 'Serial created');
+
+        return back()->with('success', "Added. Serial {$formattedSerial}");
     }
 
     public function callNext(Request $request, SerialSession $session)
     {
-        if (!Auth::user()->hasModulePermission('smart_serial','call_next') || $session->doctor_id !== Auth::id()) {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'call_next') || $session->doctor_id !== Auth::id()) {
             return $this->denyAccess($request);
         }
-        if ($session->status!=='active') return back()->with('error','Session not active.');
+        if ($session->status !== 'active') return back()->with('error', 'Session not active.');
+
         $nextPatient = null;
-        foreach (['emergency','urgent','vip','normal'] as $p) {
-            $nextPatient = $session->patientQueues()->where('status','waiting')->where('priority',$p)->orderBy('serial_number')->first();
+        foreach (['emergency', 'urgent', 'vip', 'normal'] as $p) {
+            $nextPatient = $session->patientQueues()->where('status', 'waiting')->where('priority', $p)->orderBy('serial_number')->first();
             if ($nextPatient) break;
         }
-        if (!$nextPatient) return back()->with('error','No patients waiting.');
-        $nextPatient->update(['status'=>'called','called_at'=>now()]);
-        return back()->with('success',"Called: {$nextPatient->patient->name} (#{$nextPatient->serial_number})");
+        if (!$nextPatient) return back()->with('error', 'No patients waiting.');
+
+        $nextPatient->transitionTo(PatientQueue::STATUS_CALLING, 'doctor');
+        return back()->with('success', "Called: {$nextPatient->patient->name} (#{$nextPatient->formatted_serial})");
     }
 
     public function callPatient(Request $request, $queueId)
     {
-        if (!Auth::user()->hasModulePermission('smart_serial','call_next')) {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'call_next')) {
             return $this->denyAccess($request);
         }
         $q = PatientQueue::findOrFail($queueId);
-        if ($q->doctor_id!==Auth::id()) {
+        if ($q->doctor_id !== Auth::id()) {
             return $this->denyAccess($request, 'You do not own this queue entry.');
         }
-        if ($q->status!=='waiting') return back()->with('error','Not waiting.');
-        $q->update(['status'=>'called','called_at'=>now()]);
-        return back()->with('success',"Called: {$q->patient->name}");
+        if ($q->status !== PatientQueue::STATUS_WAITING) return back()->with('error', 'Not waiting.');
+
+        $q->transitionTo(PatientQueue::STATUS_CALLING, 'doctor');
+        return back()->with('success', "Called: {$q->patient->name}");
     }
 
     public function startConsultation(Request $request, $queueId)
     {
-        if (!Auth::user()->hasModulePermission('smart_serial','call_next')) {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'call_next')) {
             return $this->denyAccess($request);
         }
         $q = PatientQueue::findOrFail($queueId);
-        if ($q->doctor_id!==Auth::id()) {
+        if ($q->doctor_id !== Auth::id()) {
             return $this->denyAccess($request, 'You do not own this queue entry.');
         }
-        $q->update(['status'=>'in_consultation','consultation_started_at'=>now()]);
-        return back()->with('success','Consultation started.');
+
+        $q->transitionTo(PatientQueue::STATUS_INSIDE, 'doctor');
+        return back()->with('success', 'Patient entered. Consultation started.');
     }
 
     public function complete(Request $request, $queueId)
     {
-        if (!Auth::user()->hasModulePermission('smart_serial','complete')) {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'complete')) {
             return $this->denyAccess($request);
         }
         $q = PatientQueue::findOrFail($queueId);
-        if ($q->doctor_id!==Auth::id()) {
+        if ($q->doctor_id !== Auth::id()) {
             return $this->denyAccess($request, 'You do not own this queue entry.');
         }
-        $q->update(['status'=>'completed','completed_at'=>now()]);
+
+        $q->transitionTo(PatientQueue::STATUS_COMPLETED, 'doctor');
 
         $settings = SmartSerialSetting::where('doctor_id', Auth::id())->first();
         if ($settings && $settings->auto_call_next) {
             $session = $q->session;
             if ($session && $session->status === 'active') {
                 $nextPatient = null;
-                foreach (['emergency','urgent','vip','normal'] as $p) {
-                    $nextPatient = $session->patientQueues()->where('status','waiting')->where('priority',$p)->orderBy('serial_number')->first();
+                foreach (['emergency', 'urgent', 'vip', 'normal'] as $p) {
+                    $nextPatient = $session->patientQueues()->where('status', 'waiting')->where('priority', $p)->orderBy('serial_number')->first();
                     if ($nextPatient) break;
                 }
                 if ($nextPatient) {
-                    $nextPatient->update(['status'=>'called','called_at'=>now()]);
-                    return back()->with('success','Completed. Auto-called: '.$nextPatient->patient->name);
+                    $nextPatient->transitionTo(PatientQueue::STATUS_CALLING, 'system', 'Auto-called after completion');
+                    return back()->with('success', 'Completed. Auto-called: ' . $nextPatient->patient->name);
                 }
             }
         }
 
-        return back()->with('success','Completed.');
+        return back()->with('success', 'Completed.');
     }
 
     public function cancel(Request $request, $queueId)
     {
-        if (!Auth::user()->hasModulePermission('smart_serial','cancel_serial')) {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'cancel_serial')) {
             return $this->denyAccess($request);
         }
         $q = PatientQueue::findOrFail($queueId);
-        if ($q->doctor_id!==Auth::id()) {
+        if ($q->doctor_id !== Auth::id()) {
             return $this->denyAccess($request, 'You do not own this queue entry.');
         }
-        $q->update(['status'=>'cancelled','cancelled_at'=>now()]);
-        return back()->with('success','Cancelled.');
-    }
 
-    public function noShow(Request $request, $queueId)
-    {
-        if (!Auth::user()->hasModulePermission('smart_serial','cancel_serial')) {
-            return $this->denyAccess($request);
-        }
-        $q = PatientQueue::findOrFail($queueId);
-        if ($q->doctor_id!==Auth::id()) {
-            return $this->denyAccess($request, 'You do not own this queue entry.');
-        }
-        $q->update(['status'=>'no_show']);
-        return back()->with('success','Marked no-show.');
-    }
-
-    public function recall(Request $request, $queueId)
-    {
-        if (!Auth::user()->hasModulePermission('smart_serial','recall')) {
-            return $this->denyAccess($request);
-        }
-        $q = PatientQueue::findOrFail($queueId);
-        if ($q->doctor_id!==Auth::id()) {
-            return $this->denyAccess($request, 'You do not own this queue entry.');
-        }
-        if (!in_array($q->status,['called','completed'])) return back()->with('error','Cannot recall.');
-        $q->update(['status'=>'waiting','called_at'=>null,'consultation_started_at'=>null,'completed_at'=>null]);
-        return back()->with('success','Recalled.');
+        $q->transitionTo(PatientQueue::STATUS_CANCELLED, 'doctor');
+        return back()->with('success', 'Cancelled.');
     }
 
     public function skip(Request $request, $queueId)
     {
-        if (!Auth::user()->hasModulePermission('smart_serial','skip')) {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'skip')) {
             return $this->denyAccess($request);
         }
         $q = PatientQueue::findOrFail($queueId);
-        if ($q->doctor_id!==Auth::id()) {
+        if ($q->doctor_id !== Auth::id()) {
             return $this->denyAccess($request, 'You do not own this queue entry.');
         }
-        $q->update(['status'=>'waiting','called_at'=>null]);
-        $next = PatientQueue::where('serial_session_id',$q->serial_session_id)->where('status','waiting')->where('id','!=',$q->id)->orderBy('serial_number')->first();
-        if ($next) $next->update(['status'=>'called','called_at'=>now()]);
-        return back()->with('success','Skipped. Next called.');
+
+        $q->transitionTo(PatientQueue::STATUS_SKIPPED, 'doctor');
+
+        // Auto-call next patient
+        $next = PatientQueue::where('serial_session_id', $q->serial_session_id)
+            ->where('status', 'waiting')
+            ->where('id', '!=', $q->id)
+            ->orderBy('serial_number')
+            ->first();
+        if ($next) {
+            $next->transitionTo(PatientQueue::STATUS_CALLING, 'system', 'Auto-called after skip');
+        }
+        return back()->with('success', 'Skipped. Next called.');
     }
 
     public function emergency(Request $request, $queueId)
     {
-        if (!Auth::user()->hasModulePermission('smart_serial','emergency')) {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'emergency')) {
             return $this->denyAccess($request);
         }
 
@@ -382,33 +432,53 @@ class SmartSerialController extends Controller
         }
 
         $q = PatientQueue::findOrFail($queueId);
-        if ($q->doctor_id!==Auth::id()) {
+        if ($q->doctor_id !== Auth::id()) {
             return $this->denyAccess($request, 'You do not own this queue entry.');
         }
-        $q->update(['priority'=>'emergency']);
-        if ($q->status==='waiting') {
-            PatientQueue::where('serial_session_id',$q->serial_session_id)->where('status','called')->update(['status'=>'waiting','called_at'=>null]);
-            $q->update(['status'=>'called','called_at'=>now()]);
+
+        $q->update(['priority' => 'emergency']);
+
+        if ($q->status === PatientQueue::STATUS_WAITING) {
+            // Move currently called patient back to waiting
+            PatientQueue::where('serial_session_id', $q->serial_session_id)
+                ->where('status', 'calling')
+                ->each(function ($patient) {
+                    $patient->update(['status' => PatientQueue::STATUS_WAITING, 'called_at' => null]);
+                    $patient->logStatusChange(PatientQueue::STATUS_WAITING, 'system', 'Moved back for emergency');
+                });
+
+            $q->transitionTo(PatientQueue::STATUS_CALLING, 'doctor', 'Emergency priority set');
         }
-        return back()->with('success','Emergency set. Called immediately.');
+
+        return back()->with('success', 'Emergency set. Called immediately.');
     }
 
     public function queueStatus(Request $request, SerialSession $session)
     {
-        if ($session->doctor_id!==Auth::id()) {
+        if ($session->doctor_id !== Auth::id()) {
             return $this->denyAccess($request, 'You do not own this session.');
         }
         $queue = $session->patientQueues()->with('patient')->orderBy('serial_number')->get();
-        return response()->json(['session'=>$session->fresh(),'queue'=>$queue,'stats'=>[
-            'total'=>$queue->count(),'waiting'=>$queue->where('status','waiting')->count(),
-            'called'=>$queue->where('status','called')->count(),'in_consultation'=>$queue->where('status','in_consultation')->count(),
-            'completed'=>$queue->where('status','completed')->count(),
-        ]]);
+        return response()->json([
+            'session' => $session->fresh(),
+            'queue' => $queue,
+            'stats' => [
+                'total' => $queue->count(),
+                'waiting' => $queue->where('status', 'waiting')->count(),
+                'preparing' => $queue->where('status', 'preparing')->count(),
+                'calling' => $queue->where('status', 'calling')->count(),
+                'inside' => $queue->where('status', 'inside')->count(),
+                'completed' => $queue->where('status', 'completed')->count(),
+                'skipped' => $queue->where('status', 'skipped')->count(),
+                'cancelled' => $queue->where('status', 'cancelled')->count(),
+                'emergency' => $queue->where('status', 'emergency')->count(),
+            ],
+        ]);
     }
 
     public function settings()
     {
-        $settings = SmartSerialSetting::firstOrCreate(['doctor_id'=>Auth::id()]);
+        $settings = SmartSerialSetting::firstOrCreate(['doctor_id' => Auth::id()]);
         $chambers = SmartSerialChamber::where('doctor_id', Auth::id())->orderBy('name')->get();
         return view('doctor.smart-serial.settings', compact('settings', 'chambers'));
     }
@@ -423,7 +493,7 @@ class SmartSerialController extends Controller
             'queue_mode' => 'required|in:serial,token,appointment',
         ]);
 
-        $settings = SmartSerialSetting::firstOrCreate(['doctor_id'=>Auth::id()]);
+        $settings = SmartSerialSetting::firstOrCreate(['doctor_id' => Auth::id()]);
         $settings->update($request->only([
             'auto_call_next', 'show_in_appointment', 'allow_priority',
             'max_queue_size', 'serial_reset_daily', 'notification_enabled',
@@ -431,6 +501,16 @@ class SmartSerialController extends Controller
             'max_serial', 'emergency_priority', 'queue_mode',
             'voice_enabled', 'display_enabled',
         ]));
-        return back()->with('success','Settings updated.');
+        return back()->with('success', 'Settings updated.');
+    }
+
+    public function statusHistory(Request $request, $queueId)
+    {
+        $q = PatientQueue::findOrFail($queueId);
+        if ($q->doctor_id !== Auth::id()) {
+            return $this->denyAccess($request);
+        }
+        $logs = $q->statusLogs()->orderBy('created_at', 'desc')->get();
+        return response()->json(['logs' => $logs]);
     }
 }

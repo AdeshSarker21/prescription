@@ -80,12 +80,12 @@
             </div>
         </div>
 
-        {{-- Called --}}
+        {{-- Calling --}}
         <div class="dashboard-card animate-card" style="border-left:4px solid #f97316;">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium" style="color:var(--text-muted);">Called</p>
-                    <p class="stat-value" style="color:#ea580c;margin-top:4px;" x-text="stats.called">{{ $stats['called'] }}</p>
+                    <p class="text-xs font-medium" style="color:var(--text-muted);">Calling</p>
+                    <p class="stat-value" style="color:#ea580c;margin-top:4px;" x-text="stats.calling">{{ $stats['calling'] }}</p>
                 </div>
                 <div class="stat-icon" style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,rgba(249,115,22,0.12),rgba(249,115,22,0.06));color:#f97316;">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
@@ -98,7 +98,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-xs font-medium" style="color:var(--text-muted);">Inside</p>
-                    <p class="stat-value" style="color:#2563eb;margin-top:4px;" x-text="stats.in_consultation">{{ $stats['in_consultation'] }}</p>
+                    <p class="stat-value" style="color:#2563eb;margin-top:4px;" x-text="stats.inside">{{ $stats['inside'] }}</p>
                 </div>
                 <div class="stat-icon" style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(59,130,246,0.06));color:#3b82f6;">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
@@ -122,12 +122,25 @@
 
     {{-- Secondary Stats Row --}}
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {{-- Preparing --}}
+        <div class="dashboard-card animate-card" style="border-left:4px solid #8b5cf6;">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium" style="color:var(--text-muted);">Preparing</p>
+                    <p class="stat-value" style="color:#7c3aed;margin-top:4px;" x-text="stats.preparing">{{ $stats['preparing'] }}</p>
+                </div>
+                <div class="stat-icon" style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,rgba(139,92,246,0.12),rgba(139,92,246,0.06));color:#8b5cf6;">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                </div>
+            </div>
+        </div>
+
         {{-- Skipped --}}
         <div class="dashboard-card animate-card" style="border-left:4px solid #6b7280;">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-xs font-medium" style="color:var(--text-muted);">Skipped</p>
-                    <p class="stat-value" style="color:#4b5563;margin-top:4px;" x-text="stats.no_show">{{ $stats['no_show'] }}</p>
+                    <p class="stat-value" style="color:#4b5563;margin-top:4px;" x-text="stats.skipped">{{ $stats['skipped'] }}</p>
                 </div>
                 <div class="stat-icon" style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,rgba(107,114,128,0.12),rgba(107,114,128,0.06));color:#6b7280;">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
@@ -153,23 +166,10 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-xs font-medium" style="color:var(--text-muted);">Emergency</p>
-                    <p class="stat-value" style="color:#b91c1c;margin-top:4px;">{{ $emergencyCount }}</p>
+                    <p class="stat-value" style="color:#b91c1c;margin-top:4px;" x-text="stats.emergency">{{ $stats['emergency'] }}</p>
                 </div>
                 <div class="stat-icon" style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,rgba(220,38,38,0.12),rgba(220,38,38,0.06));color:#dc2626;">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
-                </div>
-            </div>
-        </div>
-
-        {{-- Avg Wait Time --}}
-        <div class="dashboard-card animate-card" style="border-left:4px solid #8b5cf6;">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-medium" style="color:var(--text-muted);">Avg Wait</p>
-                    <p class="stat-value" style="color:#7c3aed;margin-top:4px;">{{ $avgWaitMinutes }}<span class="text-sm font-normal">m</span></p>
-                </div>
-                <div class="stat-icon" style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,rgba(139,92,246,0.12),rgba(139,92,246,0.06));color:#8b5cf6;">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </div>
             </div>
         </div>
@@ -205,7 +205,7 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="text-5xl font-extrabold" style="color:#ea580c;">#{{ $currentCalled->serial_number }}</p>
+                        <p class="text-5xl font-extrabold" style="color:#ea580c;">#{{ $currentCalled->formatted_serial }}</p>
                         @if($currentCalled->priority !== 'normal')
                             <span class="px-3 py-1 rounded-full text-xs font-bold mt-2 inline-block
                                 @if($currentCalled->priority === 'emergency') bg-red-100 text-red-700
@@ -246,7 +246,7 @@
             @endif
             <div class="flex items-center gap-2">
                 <svg class="w-4 h-4" style="color:#6366f1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
-                <p class="text-xs" style="color:var(--text-muted);">Current: <span class="font-bold" style="color:#6366f1;">#{{ $session ? $session->current_serial : '—' }}</span> &middot; Next: <span class="font-bold" style="color:#06b6d4;">#{{ $session ? $nextSerial : '—' }}</span></p>
+                <p class="text-xs" style="color:var(--text-muted);">Current: <span class="font-bold" style="color:#6366f1;">#{{ $session ? $session->daily_serial_counter : '—' }}</span> &middot; Next: <span class="font-bold" style="color:#06b6d4;">#{{ $session ? $nextSerial : '—' }}</span></p>
             </div>
         </div>
     </div>
@@ -334,12 +334,13 @@
                 <tbody>
                     <template x-for="item in queue" :key="item.id">
                         <tr :class="{
-                            'bg-yellow-50': item.status === 'called',
-                            'bg-blue-50': item.status === 'in_consultation',
+                            'bg-yellow-50': item.status === 'calling',
+                            'bg-blue-50': item.status === 'inside',
                             'bg-green-50': item.status === 'completed',
-                            'opacity-50': item.status === 'cancelled' || item.status === 'no_show'
+                            'bg-purple-50': item.status === 'preparing',
+                            'opacity-50': item.status === 'cancelled' || item.status === 'skipped'
                         }">
-                            <td><span class="font-bold text-lg" style="color:var(--text-primary);" x-text="'#' + item.serial_number"></span></td>
+                            <td><span class="font-bold text-lg" style="color:var(--text-primary);" x-text="'#' + (item.formatted_serial || String(item.serial_number).padStart(3, '0'))"></span></td>
                             <td><span class="font-medium" style="color:var(--text-primary);" x-text="item.patient?.name || 'N/A'"></span></td>
                             <td>
                                 <span class="px-2 py-1 rounded-full text-xs font-bold"
@@ -354,11 +355,13 @@
                                 <span class="px-2 py-1 rounded-full text-xs font-semibold"
                                     :class="{
                                         'bg-yellow-100 text-yellow-700': item.status === 'waiting',
-                                        'bg-orange-100 text-orange-700': item.status === 'called',
-                                        'bg-blue-100 text-blue-700': item.status === 'in_consultation',
+                                        'bg-purple-100 text-purple-700': item.status === 'preparing',
+                                        'bg-orange-100 text-orange-700': item.status === 'calling',
+                                        'bg-blue-100 text-blue-700': item.status === 'inside',
                                         'bg-green-100 text-green-700': item.status === 'completed',
+                                        'bg-gray-200 text-gray-500': item.status === 'skipped',
                                         'bg-red-100 text-red-700': item.status === 'cancelled',
-                                        'bg-gray-200 text-gray-500': item.status === 'no_show'
+                                        'bg-red-200 text-red-800': item.status === 'emergency'
                                     }" x-text="item.status.replace('_',' ').replace(/\b\w/g, l => l.toUpperCase())"></span>
                             </td>
                             <td style="color:var(--text-muted);" x-text="new Date(item.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})"></td>
@@ -370,37 +373,37 @@
                                             <button class="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600">Call</button>
                                         </form>
                                     </template>
-                                    <template x-if="item.status === 'called' && hasPermission('call_next')">
+                                    <template x-if="item.status === 'calling' && hasPermission('call_next')">
                                         <form method="POST" :action="'/doctor/smart-serial/queue/' + item.id + '/start-consultation'">
                                             @csrf @method('PATCH')
                                             <button class="px-2 py-1 bg-indigo-500 text-white rounded text-xs hover:bg-indigo-600">Start</button>
                                         </form>
                                     </template>
-                                    <template x-if="item.status === 'in_consultation' && hasPermission('complete')">
+                                    <template x-if="item.status === 'inside' && hasPermission('complete')">
                                         <form method="POST" :action="'/doctor/smart-serial/queue/' + item.id + '/complete'">
                                             @csrf @method('PATCH')
                                             <button class="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600">Done</button>
                                         </form>
                                     </template>
-                                    <template x-if="item.status !== 'completed' && item.status !== 'cancelled' && hasPermission('cancel_serial')">
+                                    <template x-if="item.status !== 'completed' && item.status !== 'cancelled' && item.status !== 'skipped' && hasPermission('cancel_serial')">
                                         <form method="POST" :action="'/doctor/smart-serial/queue/' + item.id + '/cancel'">
                                             @csrf @method('DELETE')
                                             <button class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600">X</button>
                                         </form>
                                     </template>
-                                    <template x-if="item.status !== 'completed' && item.status !== 'cancelled' && item.priority !== 'emergency' && hasPermission('emergency')">
+                                    <template x-if="item.status !== 'completed' && item.status !== 'cancelled' && item.status !== 'skipped' && item.priority !== 'emergency' && hasPermission('emergency')">
                                         <form method="POST" :action="'/doctor/smart-serial/queue/' + item.id + '/emergency'">
                                             @csrf @method('PATCH')
                                             <button class="px-2 py-1 bg-red-700 text-white rounded text-xs hover:bg-red-800">!</button>
                                         </form>
                                     </template>
-                                    <template x-if="(item.status === 'called' || item.status === 'completed') && hasPermission('recall')">
+                                    <template x-if="(item.status === 'calling' || item.status === 'completed') && hasPermission('recall')">
                                         <form method="POST" :action="'/doctor/smart-serial/queue/' + item.id + '/recall'">
                                             @csrf @method('PATCH')
                                             <button class="px-2 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600">Recall</button>
                                         </form>
                                     </template>
-                                    <template x-if="item.status === 'called' && hasPermission('skip')">
+                                    <template x-if="item.status === 'calling' && hasPermission('skip')">
                                         <form method="POST" :action="'/doctor/smart-serial/queue/' + item.id + '/skip'">
                                             @csrf @method('PATCH')
                                             <button class="px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600">Skip</button>
@@ -456,7 +459,7 @@ function serialDashboard() {
         init() {
             this.refreshQueue();
             this.refreshTimer = setInterval(() => this.refreshQueue(), 5000);
-            const called = this.queue.find(q => q.status === 'called');
+            const called = this.queue.find(q => q.status === 'calling');
             if (called) {
                 this.lastCalledId = called.id;
                 this.announce(called);
@@ -475,7 +478,7 @@ function serialDashboard() {
                 if (data.queue) {
                     this.queue = data.queue;
                     this.stats = data.stats;
-                    const called = data.queue.find(q => q.status === 'called');
+                    const called = data.queue.find(q => q.status === 'calling');
                     if (called && called.id !== this.lastCalledId) {
                         this.lastCalledId = called.id;
                         this.announce(called);
@@ -488,7 +491,7 @@ function serialDashboard() {
         announce(patient) {
             if (!this.voiceEnabled || !patient || !patient.patient) return;
             const name = patient.patient.name || 'Unknown';
-            const serial = patient.serial_number;
+            const serial = patient.formatted_serial || String(patient.serial_number).padStart(3, '0');
             const priority = patient.priority !== 'normal' ? `, ${patient.priority.toUpperCase()} priority` : '';
             const msg = `Now calling number ${serial}, ${name}${priority}. Please come to the chamber.`;
             if ('speechSynthesis' in window) {

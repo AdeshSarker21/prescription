@@ -116,7 +116,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Serial Number</label>
-                    <input type="text" value="#{{ $nextSerial }}" readonly class="mt-1 block w-full border rounded-lg px-3 py-2 bg-gray-50 text-gray-600 cursor-not-allowed font-bold text-lg">
+                    <input type="text" value="#{{ $formattedPreview ?? str_pad($nextSerial, 3, '0', STR_PAD_LEFT) }}" readonly class="mt-1 block w-full border rounded-lg px-3 py-2 bg-gray-50 text-gray-600 cursor-not-allowed font-bold text-lg">
                 </div>
             </div>
 
