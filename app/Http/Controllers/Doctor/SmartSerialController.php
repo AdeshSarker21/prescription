@@ -85,6 +85,43 @@ class SmartSerialController extends Controller
         ));
     }
 
+    public function searchPatients(Request $request)
+    {
+        $query = $request->get('q', '');
+        if (strlen($query) < 1) {
+            return response()->json([]);
+        }
+        $doctorId = Auth::id();
+        $patients = \App\Models\Patient::where('doctor_id', $doctorId)
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('phone', 'like', "%{$query}%")
+                  ->orWhere('patient_number', 'like', "%{$query}%");
+            })
+            ->limit(20)
+            ->get(['id', 'name', 'phone', 'patient_number', 'gender', 'date_of_birth']);
+        return response()->json($patients);
+    }
+
+    public function addSerial(Request $request)
+    {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'create_serial')) {
+            return $this->denyAccess($request);
+        }
+        $doctorId = Auth::id();
+        $today = now()->toDateString();
+        $doctor = Auth::user();
+        $chambers = SmartSerialChamber::where('doctor_id', $doctorId)->where('is_active', true)->orderBy('name')->get();
+        $activeChamberId = request('chamber_id');
+        $sessionQuery = SerialSession::where('doctor_id', $doctorId)->where('session_date', $today);
+        if ($activeChamberId) {
+            $sessionQuery->where('chamber_id', $activeChamberId);
+        }
+        $session = $sessionQuery->first();
+        $nextSerial = $session ? $session->current_serial + 1 : 1;
+        return view('doctor.smart-serial.add-serial', compact('session', 'chambers', 'activeChamberId', 'nextSerial', 'doctor'));
+    }
+
     public function index()
     {
         $doctorId = Auth::id();

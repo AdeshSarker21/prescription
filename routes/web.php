@@ -357,6 +357,8 @@ Route::middleware(['auth', 'verified', 'role:doctor', 'subscription'])->prefix('
     Route::middleware(['module:smart_serial', 'smart_serial.access'])->prefix('smart-serial')->name('smart-serial.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'dashboard'])->name('dashboard');
         Route::get('/', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'index'])->name('index');
+        Route::get('/add-serial', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'addSerial'])->name('add-serial');
+        Route::get('/search-patients', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'searchPatients'])->name('search-patients');
         Route::post('/start', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'startSession'])->name('start');
         Route::patch('/{session}/close', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'closeSession'])->name('close');
         Route::patch('/{session}/pause', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'pauseSession'])->name('pause');
