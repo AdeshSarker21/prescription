@@ -65,6 +65,21 @@
                     </div>
                 </div>
 
+                {{-- Included Modules --}}
+                @if($plan->includedModules && count($plan->includedModules) > 0)
+                <div class="mt-4">
+                    <p class="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">Included Modules</p>
+                    <div class="flex flex-wrap gap-1.5">
+                        @foreach($plan->includedModules as $module)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                {{ $module->is_core ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20' }}">
+                                {{ $module->name }}
+                            </span>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
                 @if($plan->features && count($plan->features) > 0)
                 <ul class="mt-4 space-y-2">
                     @foreach($plan->features as $feature)

@@ -1,22 +1,22 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Create Plan')
+@section('title', 'Create Add-on')
 
 @section('content')
 <div class="py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 class="text-2xl font-semibold text-white/90">Create Plan</h1>
-        <p class="mt-1 text-sm text-white/50">Add a new subscription package.</p>
+        <h1 class="text-2xl font-semibold text-white/90">Create Add-on</h1>
+        <p class="mt-1 text-sm text-white/50">Add a new module add-on that doctors can purchase.</p>
     </div>
 </div>
 
 <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-    <form action="{{ route('admin.plans.store') }}" method="POST" class="glass-card-static p-6 space-y-6">
+    <form action="{{ route('admin.addons.store') }}" method="POST" class="glass-card-static p-6 space-y-6">
         @csrf
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <label for="name" class="block text-sm font-medium text-white/70">Plan Name <span class="text-red-400">*</span></label>
+                <label for="name" class="block text-sm font-medium text-white/70">Add-on Name <span class="text-red-400">*</span></label>
                 <input type="text" name="name" id="name" value="{{ old('name') }}" required class="mt-1 block w-full glass-input">
                 @error('name') <p class="mt-1 text-sm text-red-400">{{ $message }}</p> @enderror
             </div>
@@ -25,6 +25,19 @@
                 <input type="text" name="slug" id="slug" value="{{ old('slug') }}" required class="mt-1 block w-full glass-input">
                 @error('slug') <p class="mt-1 text-sm text-red-400">{{ $message }}</p> @enderror
             </div>
+        </div>
+
+        <div>
+            <label for="module_id" class="block text-sm font-medium text-white/70">Linked Module <span class="text-red-400">*</span></label>
+            <select name="module_id" id="module_id" required class="mt-1 block w-full glass-input">
+                <option value="">Select a module</option>
+                @foreach($modules as $module)
+                    <option value="{{ $module->id }}" {{ old('module_id') == $module->id ? 'selected' : '' }}>
+                        {{ $module->name }} {{ $module->is_core ? '(Core)' : '(Optional)' }}
+                    </option>
+                @endforeach
+            </select>
+            @error('module_id') <p class="mt-1 text-sm text-red-400">{{ $message }}</p> @enderror
         </div>
 
         <div>
@@ -79,91 +92,23 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-                <label for="max_patients" class="block text-sm font-medium text-white/70">Max Patients</label>
-                <input type="number" min="0" name="max_patients" id="max_patients" value="{{ old('max_patients') }}" placeholder="Leave empty for unlimited" class="mt-1 block w-full glass-input">
-                @error('max_patients') <p class="mt-1 text-sm text-red-400">{{ $message }}</p> @enderror
-            </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label for="sort_order" class="block text-sm font-medium text-white/70">Sort Order</label>
                 <input type="number" min="0" name="sort_order" id="sort_order" value="{{ old('sort_order', 0) }}" class="mt-1 block w-full glass-input">
                 @error('sort_order') <p class="mt-1 text-sm text-red-400">{{ $message }}</p> @enderror
             </div>
-            <div class="flex items-end gap-4 pb-1">
+            <div class="flex items-end pb-1">
                 <label class="flex items-center gap-2">
                     <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} class="rounded border-white/10 bg-white/5 text-indigo-400 focus:ring-indigo-500">
                     <span class="text-sm text-white/70">Active</span>
                 </label>
-                <label class="flex items-center gap-2">
-                    <input type="checkbox" name="is_popular" value="1" {{ old('is_popular') ? 'checked' : '' }} class="rounded border-white/10 bg-white/5 text-indigo-400 focus:ring-indigo-500">
-                    <span class="text-sm text-white/70">Popular</span>
-                </label>
             </div>
-        </div>
-
-        {{-- Module Inclusion --}}
-        <div>
-            <p class="block text-sm font-medium text-white/70 mb-3">Modules Included in This Plan</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                @foreach($modules as $module)
-                    @php
-                        $isChecked = old('modules', []) && in_array($module->slug, old('modules', []));
-                    @endphp
-                    <label class="flex items-center gap-3 p-3 rounded-lg border border-white/10 hover:bg-white/5 transition-colors cursor-pointer">
-                        <input type="checkbox" name="modules[]" value="{{ $module->slug }}"
-                            {{ $isChecked ? 'checked' : '' }}
-                            class="rounded border-white/10 bg-white/5 text-indigo-400 focus:ring-indigo-500">
-                        <div class="flex-1">
-                            <span class="text-sm font-medium text-white/90">{{ $module->name }}</span>
-                            <p class="text-xs text-white/40">{{ $module->description ?? '' }}</p>
-                        </div>
-                        @if($module->is_core)
-                            <span class="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Core</span>
-                        @else
-                            <span class="text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">Optional</span>
-                        @endif
-                    </label>
-                @endforeach
-            </div>
-        </div>
-
-        {{-- Additional Features --}}
-        <div>
-            <p class="block text-sm font-medium text-white/70 mb-3">Additional Features</p>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <label class="flex items-center gap-3 p-3 rounded-lg border border-white/10 hover:bg-white/5 transition-colors cursor-pointer">
-                    <input type="checkbox" name="analytics_enabled" value="1"
-                        {{ old('analytics_enabled') ? 'checked' : '' }}
-                        class="rounded border-white/10 bg-white/5 text-indigo-400 focus:ring-indigo-500">
-                    <span class="text-sm text-white/90">Analytics & Reports</span>
-                </label>
-                <label class="flex items-center gap-3 p-3 rounded-lg border border-white/10 hover:bg-white/5 transition-colors cursor-pointer">
-                    <input type="checkbox" name="multi_doctor_enabled" value="1"
-                        {{ old('multi_doctor_enabled') ? 'checked' : '' }}
-                        class="rounded border-white/10 bg-white/5 text-indigo-400 focus:ring-indigo-500">
-                    <span class="text-sm text-white/90">Multi-Doctor Support</span>
-                </label>
-                <div class="p-3 rounded-lg border border-white/10">
-                    <label class="block text-xs font-medium text-white/50 mb-2">AI Assistant Level</label>
-                    <select name="ai_assistant_level" class="block w-full glass-input text-sm">
-                        <option value="false" {{ old('ai_assistant_level', 'false') === 'false' ? 'selected' : '' }}>Disabled</option>
-                        <option value="basic" {{ old('ai_assistant_level') === 'basic' ? 'selected' : '' }}>Basic</option>
-                        <option value="advanced" {{ old('ai_assistant_level') === 'advanced' ? 'selected' : '' }}>Advanced</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <label for="features" class="block text-sm font-medium text-white/70">Features Display Text <span class="text-white/40">(one per line, shown on plan cards)</span></label>
-            <textarea name="features" id="features" rows="6" class="mt-1 block w-full glass-input font-mono text-sm">{{ old('features') }}</textarea>
-            @error('features') <p class="mt-1 text-sm text-red-400">{{ $message }}</p> @enderror
         </div>
 
         <div class="flex items-center gap-3">
-            <button type="submit" class="btn-gradient">Create Plan</button>
-            <a href="{{ route('admin.plans.index') }}" class="btn-outline-glass">Cancel</a>
+            <button type="submit" class="btn-gradient">Create Add-on</button>
+            <a href="{{ route('admin.addons.index') }}" class="btn-outline-glass">Cancel</a>
         </div>
     </form>
 </div>

@@ -103,16 +103,66 @@
             </div>
         </div>
 
+        {{-- Module Inclusion --}}
         <div>
-            <label for="features" class="block text-sm font-medium text-white/70">Features <span class="text-white/40">(one per line)</span></label>
-            <textarea name="features" id="features" rows="6" class="mt-1 block w-full glass-input font-mono text-sm">{{ old('features', is_array($plan->features) ? implode("\n", $plan->features) : $plan->features) }}</textarea>
-            @error('features') <p class="mt-1 text-sm text-red-400">{{ $message }}</p> @enderror
+            <p class="block text-sm font-medium text-white/70 mb-3">Modules Included in This Plan</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                @foreach($modules as $module)
+                    @php
+                        $isChecked = in_array($module->slug, old('modules', $planModules ?? []));
+                    @endphp
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-white/10 hover:bg-white/5 transition-colors cursor-pointer">
+                        <input type="checkbox" name="modules[]" value="{{ $module->slug }}"
+                            {{ $isChecked ? 'checked' : '' }}
+                            class="rounded border-white/10 bg-white/5 text-indigo-400 focus:ring-indigo-500">
+                        <div class="flex-1">
+                            <span class="text-sm font-medium text-white/90">{{ $module->name }}</span>
+                            <p class="text-xs text-white/40">{{ $module->description ?? '' }}</p>
+                        </div>
+                        @if($module->is_core)
+                            <span class="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Core</span>
+                        @else
+                            <span class="text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">Optional</span>
+                        @endif
+                    </label>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Additional Features --}}
+        @php
+            $limitations = $plan->limitations ?? [];
+        @endphp
+        <div>
+            <p class="block text-sm font-medium text-white/70 mb-3">Additional Features</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label class="flex items-center gap-3 p-3 rounded-lg border border-white/10 hover:bg-white/5 transition-colors cursor-pointer">
+                    <input type="checkbox" name="analytics_enabled" value="1"
+                        {{ ($limitations['analytics'] ?? false) ? 'checked' : '' }}
+                        class="rounded border-white/10 bg-white/5 text-indigo-400 focus:ring-indigo-500">
+                    <span class="text-sm text-white/90">Analytics & Reports</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-lg border border-white/10 hover:bg-white/5 transition-colors cursor-pointer">
+                    <input type="checkbox" name="multi_doctor_enabled" value="1"
+                        {{ ($limitations['multi_doctor'] ?? false) ? 'checked' : '' }}
+                        class="rounded border-white/10 bg-white/5 text-indigo-400 focus:ring-indigo-500">
+                    <span class="text-sm text-white/90">Multi-Doctor Support</span>
+                </label>
+                <div class="p-3 rounded-lg border border-white/10">
+                    <label class="block text-xs font-medium text-white/50 mb-2">AI Assistant Level</label>
+                    <select name="ai_assistant_level" class="block w-full glass-input text-sm">
+                        <option value="false" {{ ($limitations['ai_assistant'] ?? false) === false ? 'selected' : '' }}>Disabled</option>
+                        <option value="basic" {{ ($limitations['ai_assistant'] ?? false) === 'basic' ? 'selected' : '' }}>Basic</option>
+                        <option value="advanced" {{ ($limitations['ai_assistant'] ?? false) === 'advanced' ? 'selected' : '' }}>Advanced</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div>
-            <label for="limitations" class="block text-sm font-medium text-white/70">Limitations <span class="text-white/40">(one per line)</span></label>
-            <textarea name="limitations" id="limitations" rows="3" class="mt-1 block w-full glass-input font-mono text-sm">{{ old('limitations', is_array($plan->limitations) ? implode("\n", $plan->limitations) : $plan->limitations) }}</textarea>
-            @error('limitations') <p class="mt-1 text-sm text-red-400">{{ $message }}</p> @enderror
+            <label for="features" class="block text-sm font-medium text-white/70">Features Display Text <span class="text-white/40">(one per line, shown on plan cards)</span></label>
+            <textarea name="features" id="features" rows="6" class="mt-1 block w-full glass-input font-mono text-sm">{{ old('features', is_array($plan->features) ? implode("\n", $plan->features) : $plan->features) }}</textarea>
+            @error('features') <p class="mt-1 text-sm text-red-400">{{ $message }}</p> @enderror
         </div>
 
         <div class="flex items-center gap-3">

@@ -47,6 +47,7 @@ class SubscriptionController extends Controller
     public function plans(): View
     {
         $plans = Plan::where('is_active', true)
+            ->with('includedModules')
             ->orderBy('sort_order')
             ->get();
 

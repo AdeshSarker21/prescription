@@ -180,6 +180,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::patch('/modules/{moduleSlug}/permissions/{doctorId}/toggle-all', [\App\Http\Controllers\Admin\ModulePermissionController::class, 'toggleAll'])->name('modules.permissions.toggle-all');
     Route::post('/modules/{moduleSlug}/permissions/{doctorId}/grant/{permissionName}', [\App\Http\Controllers\Admin\ModulePermissionController::class, 'grant'])->name('modules.permissions.grant');
     Route::post('/modules/{moduleSlug}/permissions/{doctorId}/revoke/{permissionName}', [\App\Http\Controllers\Admin\ModulePermissionController::class, 'revoke'])->name('modules.permissions.revoke');
+
+    // Add-on Management
+    Route::get('/addons', [\App\Http\Controllers\Admin\AddonController::class, 'index'])->name('addons.index');
+    Route::get('/addons/create', [\App\Http\Controllers\Admin\AddonController::class, 'create'])->name('addons.create');
+    Route::post('/addons', [\App\Http\Controllers\Admin\AddonController::class, 'store'])->name('addons.store');
+    Route::get('/addons/{addon}/edit', [\App\Http\Controllers\Admin\AddonController::class, 'edit'])->name('addons.edit');
+    Route::patch('/addons/{addon}', [\App\Http\Controllers\Admin\AddonController::class, 'update'])->name('addons.update');
+    Route::delete('/addons/{addon}', [\App\Http\Controllers\Admin\AddonController::class, 'destroy'])->name('addons.destroy');
 });
 
 // Subscription routes (user-facing)
@@ -358,6 +366,14 @@ Route::middleware(['auth', 'verified', 'role:doctor', 'subscription'])->prefix('
         Route::get('/settings', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'settings'])->name('settings');
         Route::post('/settings', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'updateSettings'])->name('settings.update');
     });
+
+    // Add-on Management
+    Route::get('/addons', [\App\Http\Controllers\Doctor\AddonController::class, 'index'])->name('addons.index');
+    Route::post('/addons/{addon}/purchase', [\App\Http\Controllers\Doctor\AddonController::class, 'purchase'])->name('addons.purchase');
+    Route::get('/addons/{subscription}/checkout', [\App\Http\Controllers\Doctor\AddonController::class, 'checkout'])->name('addons.checkout');
+    Route::post('/addons/{subscription}/process-payment', [\App\Http\Controllers\Doctor\AddonController::class, 'processPayment'])->name('addons.process-payment');
+    Route::get('/addons/{subscription}/confirmation', [\App\Http\Controllers\Doctor\AddonController::class, 'confirmation'])->name('addons.confirmation');
+    Route::post('/addons/{subscription}/cancel', [\App\Http\Controllers\Doctor\AddonController::class, 'cancel'])->name('addons.cancel');
 });
 
 // Assistant routes

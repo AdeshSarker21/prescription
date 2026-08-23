@@ -72,6 +72,21 @@
                 </ul>
                 @endif
 
+                {{-- Included Modules --}}
+                @if($plan->includedModules && count($plan->includedModules) > 0)
+                <div class="mt-4 pt-4" style="border-top:1px solid rgba(255,255,255,0.05);">
+                    <p class="text-xs font-semibold mb-2" style="color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Included Modules</p>
+                    <div class="flex flex-wrap gap-1.5">
+                        @foreach($plan->includedModules as $module)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                style="background:rgba(99,102,241,0.15);color:#6366f1;">
+                                {{ $module->name }}
+                            </span>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
                 <div class="mt-8">
                     @if($currentPlanId == $plan->id)
                     <div class="w-full py-3 text-sm font-semibold rounded-xl text-center" style="background:rgba(148,163,184,0.15);color:var(--text-muted);cursor:default;">Current Plan</div>

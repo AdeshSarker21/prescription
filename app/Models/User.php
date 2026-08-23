@@ -163,6 +163,37 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    /**
+     * Get the addon subscriptions for this user.
+     */
+    public function addonSubscriptions()
+    {
+        return $this->hasMany(UserAddonSubscription::class);
+    }
+
+    /**
+     * Get the active addon subscriptions for this user.
+     */
+    public function activeAddonSubscriptions()
+    {
+        return $this->addonSubscriptions()
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('ends_at')
+                  ->orWhere('ends_at', '>', now());
+            });
+    }
+
+    /**
+     * Check if user has an active addon subscription for a module.
+     */
+    public function hasAddonForModule(string $moduleSlug): bool
+    {
+        return $this->activeAddonSubscriptions()
+            ->whereHas('moduleAddon', fn ($q) => $q->where('slug', $moduleSlug))
+            ->exists();
+    }
+
     public function activePlan()
     {
         return $this->subscription?->plan;
@@ -222,7 +253,7 @@ class User extends Authenticatable
 
         $limitations = $plan->limitations ?? [];
 
-        return match ($feature) {
+        $planHasFeature = match ($feature) {
             'ai_assistant' => ($limitations['ai_assistant'] ?? false) !== false,
             'analytics' => ($limitations['analytics'] ?? false) === true,
             'multi_doctor' => ($limitations['multi_doctor'] ?? false) === true,
@@ -234,6 +265,13 @@ class User extends Authenticatable
 
             default => true,
         };
+
+        if ($planHasFeature) {
+            return true;
+        }
+
+        // Check if user has an active addon subscription for this module
+        return $this->hasAddonForModule($feature);
     }
 
     /**
