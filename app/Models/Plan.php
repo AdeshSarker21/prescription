@@ -36,6 +36,35 @@ class Plan extends Model
         return $this->hasMany(Subscription::class);
     }
 
+    /**
+     * Get the modules included in this plan.
+     */
+    public function modules()
+    {
+        return $this->belongsToMany(Module::class, 'package_modules')
+            ->withPivot(['is_included', 'settings', 'sort_order'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the active modules included in this plan.
+     */
+    public function includedModules()
+    {
+        return $this->modules()->wherePivot('is_included', true);
+    }
+
+    /**
+     * Check if this plan includes a specific module.
+     */
+    public function includesModule(string $moduleSlug): bool
+    {
+        return $this->modules()
+            ->where('modules.slug', $moduleSlug)
+            ->wherePivot('is_included', true)
+            ->exists();
+    }
+
     public function isFree(): bool
     {
         return $this->monthly_price <= 0

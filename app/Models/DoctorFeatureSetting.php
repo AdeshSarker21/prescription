@@ -20,6 +20,13 @@ class DoctorFeatureSetting extends Model
         'anesthesia',
         'procedure',
         'treatment_plan',
+        'module_prescription',
+        'module_patient_management',
+        'module_appointment',
+        'module_smart_serial',
+        'module_sms_notification',
+        'module_ai_assistant',
+        'module_reports_analytics',
     ];
 
     protected $casts = [
@@ -35,6 +42,13 @@ class DoctorFeatureSetting extends Model
         'anesthesia' => 'boolean',
         'procedure' => 'boolean',
         'treatment_plan' => 'boolean',
+        'module_prescription' => 'boolean',
+        'module_patient_management' => 'boolean',
+        'module_appointment' => 'boolean',
+        'module_smart_serial' => 'boolean',
+        'module_sms_notification' => 'boolean',
+        'module_ai_assistant' => 'boolean',
+        'module_reports_analytics' => 'boolean',
     ];
 
     public function doctor()
@@ -58,6 +72,46 @@ class DoctorFeatureSetting extends Model
         return $features;
     }
 
+    /**
+     * Get all enabled modules for this doctor.
+     */
+    public function getEnabledModules(): array
+    {
+        $modules = [];
+        foreach (self::ALL_MODULES as $module) {
+            $column = 'module_' . $module;
+            if ($this->$column) {
+                $modules[] = $module;
+            }
+        }
+        return $modules;
+    }
+
+    /**
+     * Check if a specific module is enabled.
+     */
+    public function hasModule(string $moduleKey): bool
+    {
+        $column = 'module_' . $moduleKey;
+        if (in_array($moduleKey, self::ALL_MODULES)) {
+            return (bool) $this->$column;
+        }
+        return false;
+    }
+
+    /**
+     * Enable or disable a module.
+     */
+    public function setModule(string $moduleKey, bool $enabled): bool
+    {
+        if (!in_array($moduleKey, self::ALL_MODULES)) {
+            return false;
+        }
+        $column = 'module_' . $moduleKey;
+        $this->update([$column => $enabled]);
+        return true;
+    }
+
     public static function getFeatureLabel(string $key): string
     {
         return match ($key) {
@@ -77,6 +131,23 @@ class DoctorFeatureSetting extends Model
         };
     }
 
+    /**
+     * Get human-readable label for a module key.
+     */
+    public static function getModuleLabel(string $moduleKey): string
+    {
+        return match ($moduleKey) {
+            'prescription' => 'Prescription',
+            'patient_management' => 'Patient Management',
+            'appointment' => 'Appointment',
+            'smart_serial' => 'Smart Serial Management',
+            'sms_notification' => 'SMS & Notification',
+            'ai_assistant' => 'AI Assistant',
+            'reports_analytics' => 'Reports & Analytics',
+            default => $moduleKey,
+        };
+    }
+
     const ALL_FEATURES = [
         'complaints',
         'tests',
@@ -90,5 +161,15 @@ class DoctorFeatureSetting extends Model
         'anesthesia',
         'procedure',
         'treatment_plan',
+    ];
+
+    const ALL_MODULES = [
+        'prescription',
+        'patient_management',
+        'appointment',
+        'smart_serial',
+        'sms_notification',
+        'ai_assistant',
+        'reports_analytics',
     ];
 }

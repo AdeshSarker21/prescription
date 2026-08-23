@@ -127,6 +127,34 @@ class User extends Authenticatable
         return $this->hasOne(DoctorFeatureSetting::class, 'doctor_id');
     }
 
+    /**
+     * Get the modules enabled for this user.
+     */
+    public function modules()
+    {
+        return $this->belongsToMany(Module::class, 'user_modules')
+            ->withPivot(['is_enabled', 'enabled_by', 'enabled_at', 'disabled_at'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the active modules enabled for this user.
+     */
+    public function activeModules()
+    {
+        return $this->modules()->wherePivot('is_enabled', true);
+    }
+
+    /**
+     * Get the module permissions for this user.
+     */
+    public function modulePermissions()
+    {
+        return $this->belongsToMany(ModulePermission::class, 'user_module_permissions')
+            ->withPivot(['is_granted', 'granted_by', 'granted_at'])
+            ->withTimestamps();
+    }
+
     public function activePlan()
     {
         return $this->subscription?->plan;
@@ -190,8 +218,54 @@ class User extends Authenticatable
             'ai_assistant' => ($limitations['ai_assistant'] ?? false) !== false,
             'analytics' => ($limitations['analytics'] ?? false) === true,
             'multi_doctor' => ($limitations['multi_doctor'] ?? false) === true,
+
+            // Module-based features: check if value is not explicitly false
+            'prescription', 'patient_management', 'appointment',
+            'smart_serial', 'sms_notification', 'reports_analytics'
+                => ($limitations[$feature] ?? false) !== false,
+
             default => true,
         };
+    }
+
+    /**
+     * Check if user can access a specific module.
+     */
+    public function canAccessModule(string $moduleKey): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return app(\App\Services\ModuleAccessService::class)->canAccess($moduleKey, $this);
+    }
+
+    /**
+     * Check if user has a specific permission for a module.
+     */
+    public function hasModulePermission(string $moduleSlug, string $permission): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return app(\App\Services\ModulePermissionService::class)->hasPermission($this, $moduleSlug, $permission);
+    }
+
+    /**
+     * Get all permissions for a module.
+     */
+    public function getModulePermissions(string $moduleSlug): array
+    {
+        if ($this->isAdmin()) {
+            return app(\App\Services\ModulePermissionService::class)
+                ->getModulePermissions($moduleSlug)
+                ->pluck('name')
+                ->toArray();
+        }
+
+        return app(\App\Services\ModulePermissionService::class)
+            ->getUserPermissions($this, $moduleSlug);
     }
 
     public function getAvatarUrlAttribute(): string

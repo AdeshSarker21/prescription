@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'subscription' => \App\Http\Middleware\CheckSubscription::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'assistant.access' => \App\Http\Middleware\CheckAssistantAccess::class,
+            'module' => \App\Http\Middleware\CheckModuleEnabled::class,
+            'module.permission' => \App\Http\Middleware\CheckModulePermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

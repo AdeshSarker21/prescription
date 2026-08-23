@@ -164,6 +164,18 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'index'])->name('profile');
     Route::post('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/change-password', [\App\Http\Controllers\Admin\ProfileController::class, 'changePassword'])->name('profile.changePassword');
+
+    // Module Management
+    Route::get('/modules', [\App\Http\Controllers\Admin\ModuleController::class, 'index'])->name('modules.index');
+    Route::get('/modules/{module}/doctors', [\App\Http\Controllers\Admin\ModuleController::class, 'doctorSettings'])->name('modules.doctors');
+    Route::patch('/modules/{module}/doctors/{doctorId}', [\App\Http\Controllers\Admin\ModuleController::class, 'updateDoctorModule'])->name('modules.doctors.update');
+
+    // Module Permission Management
+    Route::get('/modules/{moduleSlug}/permissions', [\App\Http\Controllers\Admin\ModulePermissionController::class, 'index'])->name('modules.permissions.index');
+    Route::patch('/modules/{moduleSlug}/permissions/{doctorId}', [\App\Http\Controllers\Admin\ModulePermissionController::class, 'update'])->name('modules.permissions.update');
+    Route::patch('/modules/{moduleSlug}/permissions/{doctorId}/toggle-all', [\App\Http\Controllers\Admin\ModulePermissionController::class, 'toggleAll'])->name('modules.permissions.toggle-all');
+    Route::post('/modules/{moduleSlug}/permissions/{doctorId}/grant/{permissionName}', [\App\Http\Controllers\Admin\ModulePermissionController::class, 'grant'])->name('modules.permissions.grant');
+    Route::post('/modules/{moduleSlug}/permissions/{doctorId}/revoke/{permissionName}', [\App\Http\Controllers\Admin\ModulePermissionController::class, 'revoke'])->name('modules.permissions.revoke');
 });
 
 // Subscription routes (user-facing)
@@ -320,6 +332,28 @@ Route::middleware(['auth', 'verified', 'role:doctor', 'subscription'])->prefix('
     Route::post('/sms-center/templates', [\App\Http\Controllers\Doctor\SmsCenterController::class, 'storeTemplate'])->name('sms-center.templates.store');
     Route::patch('/sms-center/templates/{id}', [\App\Http\Controllers\Doctor\SmsCenterController::class, 'updateTemplate'])->name('sms-center.templates.update');
     Route::delete('/sms-center/templates/{id}', [\App\Http\Controllers\Doctor\SmsCenterController::class, 'destroyTemplate'])->name('sms-center.templates.destroy');
+
+    // Smart Serial Queue
+    Route::middleware(['module:smart_serial'])->prefix('smart-serial')->name('smart-serial.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'index'])->name('index');
+        Route::post('/start', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'startSession'])->name('start');
+        Route::patch('/{session}/close', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'closeSession'])->name('close');
+        Route::patch('/{session}/pause', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'pauseSession'])->name('pause');
+        Route::patch('/{session}/resume', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'resumeSession'])->name('resume');
+        Route::post('/add-patient', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'addPatient'])->name('add-patient');
+        Route::patch('/{session}/call-next', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'callNext'])->name('call-next');
+        Route::patch('/queue/{queueId}/call', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'callPatient'])->name('call-patient');
+        Route::patch('/queue/{queueId}/start-consultation', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'startConsultation'])->name('start-consultation');
+        Route::patch('/queue/{queueId}/complete', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'complete'])->name('complete');
+        Route::delete('/queue/{queueId}/cancel', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'cancel'])->name('cancel');
+        Route::patch('/queue/{queueId}/no-show', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'noShow'])->name('no-show');
+        Route::patch('/queue/{queueId}/recall', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'recall'])->name('recall');
+        Route::patch('/queue/{queueId}/skip', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'skip'])->name('skip');
+        Route::patch('/queue/{queueId}/emergency', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'emergency'])->name('emergency');
+        Route::get('/{session}/status', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'queueStatus'])->name('queue-status');
+        Route::get('/settings', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'settings'])->name('settings');
+        Route::post('/settings', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'updateSettings'])->name('settings.update');
+    });
 });
 
 // Assistant routes
@@ -353,6 +387,26 @@ Route::middleware(['auth', 'verified', 'role:assistant', 'assistant.access'])->p
     Route::patch('/clinical-seals/{id}', [\App\Http\Controllers\Assistant\ClinicalSealController::class, 'update'])->name('clinical-seals.update');
     Route::delete('/clinical-seals/{id}', [\App\Http\Controllers\Assistant\ClinicalSealController::class, 'destroy'])->name('clinical-seals.destroy');
     Route::post('/clinical-seals/{id}/toggle-status', [\App\Http\Controllers\Assistant\ClinicalSealController::class, 'toggleStatus'])->name('clinical-seals.toggle-status');
+
+    // Smart Serial Queue
+    Route::middleware(['module:smart_serial'])->prefix('smart-serial')->name('smart-serial.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'index'])->name('index');
+        Route::post('/start', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'startSession'])->name('start');
+        Route::patch('/{session}/close', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'closeSession'])->name('close');
+        Route::patch('/{session}/pause', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'pauseSession'])->name('pause');
+        Route::patch('/{session}/resume', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'resumeSession'])->name('resume');
+        Route::post('/add-patient', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'addPatient'])->name('add-patient');
+        Route::patch('/{session}/call-next', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'callNext'])->name('call-next');
+        Route::patch('/queue/{queueId}/call', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'callPatient'])->name('call-patient');
+        Route::patch('/queue/{queueId}/start-consultation', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'startConsultation'])->name('start-consultation');
+        Route::patch('/queue/{queueId}/complete', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'complete'])->name('complete');
+        Route::delete('/queue/{queueId}/cancel', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'cancel'])->name('cancel');
+        Route::patch('/queue/{queueId}/no-show', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'noShow'])->name('no-show');
+        Route::patch('/queue/{queueId}/recall', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'recall'])->name('recall');
+        Route::patch('/queue/{queueId}/skip', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'skip'])->name('skip');
+        Route::patch('/queue/{queueId}/emergency', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'emergency'])->name('emergency');
+        Route::get('/{session}/status', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'queueStatus'])->name('queue-status');
+    });
 
     // Notifications
     Route::post('/notifications/mark-all-read', function () {

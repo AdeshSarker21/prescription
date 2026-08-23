@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RoleSeeder extends Seeder
@@ -12,22 +13,33 @@ class RoleSeeder extends Seeder
         // =========================
         // ADMIN ROLE
         // =========================
-        Role::firstOrCreate([
-            'name' => 'admin'
-        ]);
+        $admin = Role::firstOrCreate(['name' => 'admin']);
 
         // =========================
         // DOCTOR ROLE
         // =========================
-        Role::firstOrCreate([
-            'name' => 'doctor'
-        ]);
+        $doctor = Role::firstOrCreate(['name' => 'doctor']);
 
         // =========================
         // ASSISTANT ROLE
         // =========================
-        Role::firstOrCreate([
-            'name' => 'assistant'
-        ]);
+        $assistant = Role::firstOrCreate(['name' => 'assistant']);
+
+        // =========================
+        // MODULE PERMISSIONS
+        // =========================
+        $modulePermissions = [
+            'smart-serial-manage',
+        ];
+
+        foreach ($modulePermissions as $permissionName) {
+            $permission = Permission::firstOrCreate([
+                'name' => $permissionName,
+                'guard_name' => 'web',
+            ]);
+
+            $doctor->givePermissionTo($permission);
+            $assistant->givePermissionTo($permission);
+        }
     }
 }
