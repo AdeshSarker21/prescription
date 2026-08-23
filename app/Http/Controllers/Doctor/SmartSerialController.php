@@ -22,6 +22,42 @@ class SmartSerialController extends Controller
         abort(403, $message);
     }
 
+    public function dashboard()
+    {
+        $doctorId = Auth::id();
+        $today = now()->toDateString();
+        $session = SerialSession::where('doctor_id', $doctorId)->where('session_date', $today)->first();
+        $doctor = Auth::user();
+        $stats = ['total'=>0,'waiting'=>0,'called'=>0,'in_consultation'=>0,'completed'=>0,'cancelled'=>0,'no_show'=>0];
+        $nextPatient = null;
+        $currentCalled = null;
+        $emergencyCount = 0;
+
+        if ($session) {
+            $queue = $session->patientQueues()->with('patient')->get();
+            $stats = [
+                'total'            => $queue->count(),
+                'waiting'          => $queue->where('status','waiting')->count(),
+                'called'           => $queue->where('status','called')->count(),
+                'in_consultation'  => $queue->where('status','in_consultation')->count(),
+                'completed'        => $queue->where('status','completed')->count(),
+                'cancelled'        => $queue->where('status','cancelled')->count(),
+                'no_show'          => $queue->where('status','no_show')->count(),
+            ];
+            $emergencyCount = $queue->where('priority','emergency')->count();
+            $currentCalled = $queue->where('status','called')->first();
+            foreach (['emergency','urgent','vip','normal'] as $p) {
+                $nextPatient = $queue->where('status','waiting')->where('priority',$p)->sortBy('serial_number')->first();
+                if ($nextPatient) break;
+            }
+        }
+
+        $chambers = $doctor->chambers;
+        $currentChamber = is_array($chambers) && count($chambers) > 0 ? $chambers[0] : null;
+
+        return view('doctor.smart-serial.dashboard', compact('session', 'stats', 'doctor', 'currentChamber', 'nextPatient', 'currentCalled', 'emergencyCount'));
+    }
+
     public function index()
     {
         $doctorId = Auth::id();
