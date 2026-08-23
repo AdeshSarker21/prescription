@@ -10,7 +10,7 @@ class SerialSession extends Model
     use HasFactory;
 
     protected $fillable = [
-        'doctor_id', 'session_date', 'session_label', 'status',
+        'doctor_id', 'chamber_id', 'session_date', 'session_label', 'status',
         'current_serial', 'total_patients', 'started_at', 'closed_at',
     ];
 
@@ -23,6 +23,11 @@ class SerialSession extends Model
     public function doctor()
     {
         return $this->belongsTo(User::class, 'doctor_id');
+    }
+
+    public function chamber()
+    {
+        return $this->belongsTo(SmartSerialChamber::class, 'chamber_id');
     }
 
     public function patientQueues()

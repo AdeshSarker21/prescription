@@ -132,6 +132,10 @@ class ModuleRegistry
         }
 
         if ($user->isDoctor() || $user->isAssistant()) {
+            if (method_exists($user, 'hasModulePermission') && $user->hasModulePermission($key, 'view')) {
+                return true;
+            }
+
             $setting = DoctorFeatureSetting::getForDoctor(
                 $user->isDoctor() ? $user->id : $user->getAccessibleDoctorIds()[0] ?? $user->id
             );

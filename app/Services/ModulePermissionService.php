@@ -146,6 +146,7 @@ class ModulePermissionService
             $grantedPermissions = UserModulePermission::where('user_id', $doctor->id)
                 ->where('is_granted', true)
                 ->whereHas('modulePermission', fn ($q) => $q->where('module_id', $module->id))
+                ->join('module_permissions', 'user_module_permissions.module_permission_id', '=', 'module_permissions.id')
                 ->pluck('module_permissions.name')
                 ->toArray();
 

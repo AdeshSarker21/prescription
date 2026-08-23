@@ -188,6 +188,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('/addons/{addon}/edit', [\App\Http\Controllers\Admin\AddonController::class, 'edit'])->name('addons.edit');
     Route::patch('/addons/{addon}', [\App\Http\Controllers\Admin\AddonController::class, 'update'])->name('addons.update');
     Route::delete('/addons/{addon}', [\App\Http\Controllers\Admin\AddonController::class, 'destroy'])->name('addons.destroy');
+
+    // Smart Serial Chamber Management
+    Route::get('/chambers', [\App\Http\Controllers\Admin\ChamberController::class, 'index'])->name('chambers.index');
+    Route::get('/chambers/create', [\App\Http\Controllers\Admin\ChamberController::class, 'create'])->name('chambers.create');
+    Route::post('/chambers', [\App\Http\Controllers\Admin\ChamberController::class, 'store'])->name('chambers.store');
+    Route::get('/chambers/{chamber}/edit', [\App\Http\Controllers\Admin\ChamberController::class, 'edit'])->name('chambers.edit');
+    Route::patch('/chambers/{chamber}', [\App\Http\Controllers\Admin\ChamberController::class, 'update'])->name('chambers.update');
+    Route::delete('/chambers/{chamber}', [\App\Http\Controllers\Admin\ChamberController::class, 'destroy'])->name('chambers.destroy');
 });
 
 // Subscription routes (user-facing)

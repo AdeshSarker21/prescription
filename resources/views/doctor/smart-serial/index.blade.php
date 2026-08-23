@@ -4,6 +4,19 @@
 
 @section('content')
 <div class="space-y-6">
+    {{-- Chamber Tabs --}}
+    @if($chambers->count() > 0)
+    <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-sm font-semibold" style="color:var(--text-muted);">Chambers:</span>
+        @foreach($chambers as $chamber)
+            <a href="{{ route('doctor.smart-serial.index', ['chamber_id' => $chamber->id]) }}"
+               class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ ($activeChamberId == $chamber->id || (!$activeChamberId && $loop->first)) ? 'bg-blue-600 text-white shadow-md' : 'bg-white/50 text-gray-600 hover:bg-white/70' }}">
+                {{ $chamber->serial_prefix ? $chamber->serial_prefix . ' - ' : '' }}{{ $chamber->name }}
+            </a>
+        @endforeach
+    </div>
+    @endif
+
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Smart Serial Queue</h1>
@@ -28,6 +41,14 @@
         @else
             <form method="POST" action="{{ route('doctor.smart-serial.start') }}">
                 @csrf
+                <select name="chamber_id" required class="mr-2 px-3 py-2 border rounded-lg">
+                    <option value="">Select Chamber</option>
+                    @foreach($chambers as $chamber)
+                        <option value="{{ $chamber->id }}" {{ ($activeChamberId == $chamber->id || (!$activeChamberId && $loop->first)) ? 'selected' : '' }}>
+                            {{ $chamber->serial_prefix ? $chamber->serial_prefix . ' - ' : '' }}{{ $chamber->name }}
+                        </option>
+                    @endforeach
+                </select>
                 <input type="text" name="label" placeholder="Session label (optional)" class="mr-2 px-3 py-2 border rounded-lg">
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Start Session</button>
             </form>

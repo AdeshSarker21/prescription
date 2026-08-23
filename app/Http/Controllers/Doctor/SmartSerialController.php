@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Doctor;
 use App\Http\Controllers\Controller;
 use App\Models\PatientQueue;
 use App\Models\SerialSession;
+use App\Models\SmartSerialChamber;
 use App\Models\SmartSerialSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,15 +27,26 @@ class SmartSerialController extends Controller
     {
         $doctorId = Auth::id();
         $today = now()->toDateString();
-        $session = SerialSession::where('doctor_id', $doctorId)->where('session_date', $today)->first();
         $doctor = Auth::user();
+        $permissions = $doctor->getModulePermissions('smart_serial');
+        $chambers = SmartSerialChamber::where('doctor_id', $doctorId)->where('is_active', true)->orderBy('name')->get();
+        $activeChamberId = request('chamber_id');
+
+        $sessionQuery = SerialSession::where('doctor_id', $doctorId)->where('session_date', $today);
+        if ($activeChamberId) {
+            $sessionQuery->where('chamber_id', $activeChamberId);
+        }
+        $session = $sessionQuery->first();
         $stats = ['total'=>0,'waiting'=>0,'called'=>0,'in_consultation'=>0,'completed'=>0,'cancelled'=>0,'no_show'=>0];
         $nextPatient = null;
         $currentCalled = null;
         $emergencyCount = 0;
+        $avgWaitMinutes = 0;
+        $nextSerial = 0;
+        $queue = collect();
 
         if ($session) {
-            $queue = $session->patientQueues()->with('patient')->get();
+            $queue = $session->patientQueues()->with('patient')->orderBy('serial_number')->get();
             $stats = [
                 'total'            => $queue->count(),
                 'waiting'          => $queue->where('status','waiting')->count(),
@@ -46,23 +58,47 @@ class SmartSerialController extends Controller
             ];
             $emergencyCount = $queue->where('priority','emergency')->count();
             $currentCalled = $queue->where('status','called')->first();
+            $nextSerial = $session->current_serial + 1;
+
             foreach (['emergency','urgent','vip','normal'] as $p) {
                 $nextPatient = $queue->where('status','waiting')->where('priority',$p)->sortBy('serial_number')->first();
                 if ($nextPatient) break;
             }
+
+            $completedPatients = $queue->where('status','completed')->filter(function ($item) {
+                return $item->called_at && $item->completed_at;
+            });
+            if ($completedPatients->count() > 0) {
+                $totalWait = $completedPatients->sum(function ($item) {
+                    return $item->called_at->diffInSeconds($item->completed_at);
+                });
+                $avgWaitMinutes = round($totalWait / $completedPatients->count() / 60, 1);
+            }
         }
 
-        $chambers = $doctor->chambers;
-        $currentChamber = is_array($chambers) && count($chambers) > 0 ? $chambers[0] : null;
+        $currentChamber = $session?->chamber ?? $chambers->first();
 
-        return view('doctor.smart-serial.dashboard', compact('session', 'stats', 'doctor', 'currentChamber', 'nextPatient', 'currentCalled', 'emergencyCount'));
+        return view('doctor.smart-serial.dashboard', compact(
+            'session', 'stats', 'doctor', 'currentChamber', 'nextPatient',
+            'currentCalled', 'emergencyCount', 'avgWaitMinutes', 'nextSerial',
+            'queue', 'permissions', 'chambers', 'activeChamberId'
+        ));
     }
 
     public function index()
     {
         $doctorId = Auth::id();
         $today = now()->toDateString();
-        $session = SerialSession::where('doctor_id', $doctorId)->where('session_date', $today)->first();
+        $doctor = Auth::user();
+        $chambers = SmartSerialChamber::where('doctor_id', $doctorId)->where('is_active', true)->orderBy('name')->get();
+        $activeChamberId = request('chamber_id');
+
+        $sessionQuery = SerialSession::where('doctor_id', $doctorId)->where('session_date', $today);
+        if ($activeChamberId) {
+            $sessionQuery->where('chamber_id', $activeChamberId);
+        }
+        $session = $sessionQuery->first();
+
         $queue = collect();
         $stats = ['total'=>0,'waiting'=>0,'called'=>0,'in_consultation'=>0,'completed'=>0,'cancelled'=>0,'no_show'=>0];
         if ($session) {
@@ -74,9 +110,9 @@ class SmartSerialController extends Controller
                 'no_show' => $queue->where('status','no_show')->count(),
             ];
         }
-        $permissions = Auth::user()->getModulePermissions('smart_serial');
+        $permissions = $doctor->getModulePermissions('smart_serial');
         $settings = SmartSerialSetting::where('doctor_id', $doctorId)->first();
-        return view('doctor.smart-serial.index', compact('session', 'queue', 'stats', 'permissions', 'settings'));
+        return view('doctor.smart-serial.index', compact('session', 'queue', 'stats', 'permissions', 'settings', 'chambers', 'activeChamberId'));
     }
 
     public function startSession(Request $request)
@@ -84,16 +120,32 @@ class SmartSerialController extends Controller
         if (!Auth::user()->hasModulePermission('smart_serial', 'create_serial')) {
             return $this->denyAccess($request);
         }
+        $request->validate([
+            'chamber_id' => 'required|exists:smart_serial_chambers,id',
+        ]);
         $doctorId = Auth::id();
         $today = now()->toDateString();
-        if (SerialSession::where('doctor_id', $doctorId)->where('session_date', $today)->exists()) {
-            return back()->with('error', 'A session already exists for today.');
+
+        if (SerialSession::where('doctor_id', $doctorId)->where('session_date', $today)->where('chamber_id', $request->chamber_id)->exists()) {
+            return back()->with('error', 'A session already exists for this chamber today.');
         }
+
+        $chamber = SmartSerialChamber::findOrFail($request->chamber_id);
+        if ($chamber->doctor_id !== $doctorId) {
+            return $this->denyAccess($request, 'This chamber does not belong to you.');
+        }
+
         SerialSession::create([
-            'doctor_id' => $doctorId, 'session_date' => $today, 'session_label' => $request->input('label'),
-            'status' => 'active', 'current_serial' => 0, 'total_patients' => 0, 'started_at' => now(),
+            'doctor_id' => $doctorId,
+            'chamber_id' => $chamber->id,
+            'session_date' => $today,
+            'session_label' => $request->input('label'),
+            'status' => 'active',
+            'current_serial' => $chamber->daily_starting_number - 1,
+            'total_patients' => 0,
+            'started_at' => now(),
         ]);
-        return back()->with('success', 'Session started.');
+        return back()->with('success', "Session started in {$chamber->name}.");
     }
 
     public function closeSession(Request $request, SerialSession $session)
