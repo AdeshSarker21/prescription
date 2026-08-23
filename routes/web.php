@@ -334,7 +334,7 @@ Route::middleware(['auth', 'verified', 'role:doctor', 'subscription'])->prefix('
     Route::delete('/sms-center/templates/{id}', [\App\Http\Controllers\Doctor\SmsCenterController::class, 'destroyTemplate'])->name('sms-center.templates.destroy');
 
     // Smart Serial Queue
-    Route::middleware(['module:smart_serial'])->prefix('smart-serial')->name('smart-serial.')->group(function () {
+    Route::middleware(['module:smart_serial', 'smart_serial.access'])->prefix('smart-serial')->name('smart-serial.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'index'])->name('index');
         Route::post('/start', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'startSession'])->name('start');
         Route::patch('/{session}/close', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'closeSession'])->name('close');
@@ -389,7 +389,7 @@ Route::middleware(['auth', 'verified', 'role:assistant', 'assistant.access'])->p
     Route::post('/clinical-seals/{id}/toggle-status', [\App\Http\Controllers\Assistant\ClinicalSealController::class, 'toggleStatus'])->name('clinical-seals.toggle-status');
 
     // Smart Serial Queue
-    Route::middleware(['module:smart_serial'])->prefix('smart-serial')->name('smart-serial.')->group(function () {
+    Route::middleware(['module:smart_serial', 'smart_serial.access'])->prefix('smart-serial')->name('smart-serial.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'index'])->name('index');
         Route::post('/start', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'startSession'])->name('start');
         Route::patch('/{session}/close', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'closeSession'])->name('close');

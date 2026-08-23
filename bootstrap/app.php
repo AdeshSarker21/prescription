@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'assistant.access' => \App\Http\Middleware\CheckAssistantAccess::class,
             'module' => \App\Http\Middleware\CheckModuleEnabled::class,
             'module.permission' => \App\Http\Middleware\CheckModulePermission::class,
+            'smart_serial.access' => \App\Http\Middleware\EnsureSmartSerialAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
