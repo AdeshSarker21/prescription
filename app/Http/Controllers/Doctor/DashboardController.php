@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Doctor;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Patient;
+use App\Models\PatientQueue;
 use App\Models\Prescription;
+use App\Models\SerialSession;
 use App\Models\User;
 use Illuminate\View\View;
 
@@ -46,6 +48,34 @@ class DashboardController extends Controller
 
         $activePlan = auth()->user()->activePlan()?->name ?? 'N/A';
 
+        $hasSmartSerial = auth()->user()->hasModulePermission('smart_serial', 'view');
+        $activeSession = null;
+        $queueStats = ['waiting' => 0, 'called' => 0, 'in_consultation' => 0, 'completed' => 0, 'skipped' => 0];
+        $nextPatient = null;
+
+        if ($hasSmartSerial) {
+            $activeSession = SerialSession::where('doctor_id', auth()->id())
+                ->where('session_date', today())
+                ->where('status', 'active')
+                ->with('chamber')
+                ->first();
+
+            if ($activeSession) {
+                $queueStats['waiting'] = $activeSession->patientQueues()->where('status', 'waiting')->count();
+                $queueStats['called'] = $activeSession->patientQueues()->where('status', 'called')->count();
+                $queueStats['in_consultation'] = $activeSession->patientQueues()->where('status', 'in_consultation')->count();
+                $queueStats['completed'] = $activeSession->patientQueues()->where('status', 'completed')->count();
+                $queueStats['skipped'] = $activeSession->patientQueues()->where('status', 'skipped')->count();
+
+                $nextPatient = $activeSession->patientQueues()
+                    ->where('status', 'waiting')
+                    ->with('patient')
+                    ->orderByRaw("CASE priority WHEN 'emergency' THEN 1 WHEN 'urgent' THEN 2 WHEN 'vip' THEN 3 ELSE 4 END")
+                    ->orderBy('serial_number')
+                    ->first();
+            }
+        }
+
         return view('doctor.dashboard.index', compact(
             'totalPatients',
             'todayAppointments',
@@ -53,7 +83,11 @@ class DashboardController extends Controller
             'prescriptionStatusCounts',
             'todayFollowUps',
             'recentAppointments',
-            'activePlan'
+            'activePlan',
+            'hasSmartSerial',
+            'activeSession',
+            'queueStats',
+            'nextPatient'
         ));
     }
 }

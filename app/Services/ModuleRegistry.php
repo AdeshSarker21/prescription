@@ -127,10 +127,9 @@ class ModuleRegistry
         }
 
         $planKey = $module['plan_key'] ?? $key;
-        if (!$user->hasFeature($planKey)) {
-            return false;
-        }
+        $planAllows = $user->hasFeature($planKey);
 
+        // Check doctor/assistant module permission — grants access even if plan doesn't include the module
         if ($user->isDoctor() || $user->isAssistant()) {
             if (method_exists($user, 'hasModulePermission') && $user->hasModulePermission($key, 'view')) {
                 return true;
@@ -140,15 +139,23 @@ class ModuleRegistry
                 $user->isDoctor() ? $user->id : $user->getAccessibleDoctorIds()[0] ?? $user->id
             );
             $column = 'module_' . $key;
-            if (method_exists($setting, 'hasModule')) {
-                return $setting->hasModule($key);
+            if (method_exists($setting, 'hasModule') && $setting->hasModule($key)) {
+                return true;
             }
             if (property_exists($setting, $column) || in_array($column, $setting->getFillable())) {
-                return (bool) $setting->$column;
+                if ((bool) $setting->$column) {
+                    return true;
+                }
             }
         }
 
-        return true;
+        // Plan-based access (only checked after permission-based checks)
+        if ($planAllows) {
+            return true;
+        }
+
+        // Final fallback: addon subscription
+        return $user->hasAddonForModule($key);
     }
 
     /**

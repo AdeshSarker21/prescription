@@ -66,6 +66,98 @@
         </div>
     </div>
 
+    {{-- Smart Serial Queue --}}
+    @if($hasSmartSerial)
+    <div class="dashboard-card animate-card" style="border-left:4px solid #06b6d4;" x-data="{
+        queue: {{ $activeSession ? json_encode($queueStats) : '{}' }},
+        sessionActive: {{ $activeSession ? 'true' : 'false' }},
+        refreshQueue() {
+            if (!this.sessionActive) return;
+            fetch('{{ $activeSession ? route('doctor.smart-serial.queue-status', $activeSession) : '#' }}', {
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                this.queue = data.queue;
+                this.$dispatch('queue-updated', data);
+            })
+            .catch(() => {});
+        }
+    }" x-init="setInterval(() => refreshQueue(), 5000)">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:rgba(6,182,212,0.12);">
+                    <svg class="w-5 h-5" style="color:#06b6d4;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold" style="color:var(--text-primary);">Smart Serial Queue</h3>
+                    @if($activeSession)
+                    <p class="text-xs" style="color:var(--text-muted);">
+                        {{ $activeSession->chamber?->name ?? 'General' }} &bull;
+                        Session started {{ $activeSession->started_at?->format('g:i A') ?? '' }}
+                    </p>
+                    @endif
+                </div>
+            </div>
+            <a href="{{ route('doctor.smart-serial.dashboard') }}" style="color:#06b6d4;padding:6px 14px;border-radius:8px;background:rgba(6,182,212,0.08);font-size:14px;font-weight:500;transition:all 0.2s;" class="hover:opacity-80">
+                Open Dashboard &rarr;
+            </a>
+        </div>
+
+        @if($activeSession)
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
+            <div class="text-center p-3 rounded-lg" style="background:rgba(245,158,11,0.08);">
+                <p class="text-2xl font-bold" style="color:#d97706;" x-text="queue.waiting ?? {{ $queueStats['waiting'] }}"></p>
+                <p class="text-xs font-medium" style="color:#92400e;">Waiting</p>
+            </div>
+            <div class="text-center p-3 rounded-lg" style="background:rgba(59,130,246,0.08);">
+                <p class="text-2xl font-bold" style="color:#2563eb;" x-text="queue.called ?? {{ $queueStats['called'] }}"></p>
+                <p class="text-xs font-medium" style="color:#1e40af;">Called</p>
+            </div>
+            <div class="text-center p-3 rounded-lg" style="background:rgba(139,92,246,0.08);">
+                <p class="text-2xl font-bold" style="color:#7c3aed;" x-text="queue.in_consultation ?? {{ $queueStats['in_consultation'] }}"></p>
+                <p class="text-xs font-medium" style="color:#4c1d95;">In Consult</p>
+            </div>
+            <div class="text-center p-3 rounded-lg" style="background:rgba(16,185,129,0.08);">
+                <p class="text-2xl font-bold" style="color:#059669;" x-text="queue.completed ?? {{ $queueStats['completed'] }}"></p>
+                <p class="text-xs font-medium" style="color:#065f46;">Completed</p>
+            </div>
+            <div class="text-center p-3 rounded-lg" style="background:rgba(100,116,139,0.08);">
+                <p class="text-2xl font-bold" style="color:#475569;" x-text="queue.skipped ?? {{ $queueStats['skipped'] }}"></p>
+                <p class="text-xs font-medium" style="color:#334155;">Skipped</p>
+            </div>
+        </div>
+
+        @if($nextPatient)
+        <div class="flex items-center justify-between p-3 rounded-lg" style="background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.15);">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white" style="background:#06b6d4;">
+                    #{{ $nextPatient->serial_number }}
+                </div>
+                <div>
+                    <p class="font-semibold text-sm" style="color:var(--text-primary);">Next: {{ $nextPatient->patient->name ?? 'Unknown' }}</p>
+                    <p class="text-xs" style="color:var(--text-muted);">Priority: {{ ucfirst($nextPatient->priority) }}</p>
+                </div>
+            </div>
+            <a href="{{ route('doctor.smart-serial.dashboard') }}" class="text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90" style="background:#06b6d4;">
+                Call Now
+            </a>
+        </div>
+        @endif
+        @else
+        <div class="text-center py-6" style="color:var(--text-muted);">
+            <svg class="w-12 h-12 mx-auto mb-3" style="color:#cbd5e1;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-sm font-medium">No active session today</p>
+            <a href="{{ route('doctor.smart-serial.index') }}" class="text-sm font-medium mt-2 inline-block" style="color:#06b6d4;">Start Session &rarr;</a>
+        </div>
+        @endif
+    </div>
+    @endif
+
     {{-- Prescription Status Stats --}}
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <a href="{{ route('doctor.prescriptions.index', ['status' => 'investigation_pending']) }}" class="dashboard-card animate-card block hover:scale-[1.02] transition-transform" style="border-left:4px solid #f59e0b;">
