@@ -184,6 +184,18 @@ class SmartSerialController extends Controller
         $doctorId = Auth::id();
         $session = SerialSession::where('doctor_id',$doctorId)->where('session_date',now()->toDateString())->where('status','!=','closed')->first();
         if (!$session) return back()->with('error','No active session.');
+
+        $settings = SmartSerialSetting::where('doctor_id', $doctorId)->first();
+        if ($settings) {
+            $currentTotal = $session->patientQueues()->count();
+            if ($currentTotal >= $settings->max_queue_size) {
+                return back()->with('error', "Queue is full (max {$settings->max_queue_size}).");
+            }
+            if ($session->current_serial >= $settings->max_serial) {
+                return back()->with('error', "Maximum serial number ({$settings->max_serial}) reached.");
+            }
+        }
+
         if ($session->patientQueues()->where('patient_id',$request->patient_id)->whereIn('status',['waiting','called','in_consultation'])->exists()) {
             return back()->with('error','Patient already in queue.');
         }
@@ -246,6 +258,23 @@ class SmartSerialController extends Controller
             return $this->denyAccess($request, 'You do not own this queue entry.');
         }
         $q->update(['status'=>'completed','completed_at'=>now()]);
+
+        $settings = SmartSerialSetting::where('doctor_id', Auth::id())->first();
+        if ($settings && $settings->auto_call_next) {
+            $session = $q->session;
+            if ($session && $session->status === 'active') {
+                $nextPatient = null;
+                foreach (['emergency','urgent','vip','normal'] as $p) {
+                    $nextPatient = $session->patientQueues()->where('status','waiting')->where('priority',$p)->orderBy('serial_number')->first();
+                    if ($nextPatient) break;
+                }
+                if ($nextPatient) {
+                    $nextPatient->update(['status'=>'called','called_at'=>now()]);
+                    return back()->with('success','Completed. Auto-called: '.$nextPatient->patient->name);
+                }
+            }
+        }
+
         return back()->with('success','Completed.');
     }
 
@@ -309,6 +338,12 @@ class SmartSerialController extends Controller
         if (!Auth::user()->hasModulePermission('smart_serial','emergency')) {
             return $this->denyAccess($request);
         }
+
+        $settings = SmartSerialSetting::where('doctor_id', Auth::id())->first();
+        if ($settings && !$settings->emergency_priority) {
+            return back()->with('error', 'Emergency priority is disabled in settings.');
+        }
+
         $q = PatientQueue::findOrFail($queueId);
         if ($q->doctor_id!==Auth::id()) {
             return $this->denyAccess($request, 'You do not own this queue entry.');
@@ -337,13 +372,28 @@ class SmartSerialController extends Controller
     public function settings()
     {
         $settings = SmartSerialSetting::firstOrCreate(['doctor_id'=>Auth::id()]);
-        return view('doctor.smart-serial.settings', compact('settings'));
+        $chambers = SmartSerialChamber::where('doctor_id', Auth::id())->orderBy('name')->get();
+        return view('doctor.smart-serial.settings', compact('settings', 'chambers'));
     }
 
     public function updateSettings(Request $request)
     {
+        $request->validate([
+            'starting_serial_number' => 'required|integer|min:1',
+            'max_queue_size' => 'required|integer|min:1|max:500',
+            'max_serial' => 'required|integer|min:1',
+            'prefix' => 'nullable|string|max:20',
+            'queue_mode' => 'required|in:serial,token,appointment',
+        ]);
+
         $settings = SmartSerialSetting::firstOrCreate(['doctor_id'=>Auth::id()]);
-        $settings->update($request->only(['auto_call_next','show_in_appointment','allow_priority','max_queue_size','serial_reset_daily','notification_enabled']));
+        $settings->update($request->only([
+            'auto_call_next', 'show_in_appointment', 'allow_priority',
+            'max_queue_size', 'serial_reset_daily', 'notification_enabled',
+            'starting_serial_number', 'auto_increment', 'prefix',
+            'max_serial', 'emergency_priority', 'queue_mode',
+            'voice_enabled', 'display_enabled',
+        ]));
         return back()->with('success','Settings updated.');
     }
 }
