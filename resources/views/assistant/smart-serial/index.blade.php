@@ -193,6 +193,9 @@
                                             <button class="px-2 py-1 bg-gray-500 text-white rounded text-xs">Skip</button>
                                         </form>
                                     @endif
+                                    @if(!in_array($item->status, ['cancelled','skipped']))
+                                        <a href="{{ route('assistant.smart-serial.print-token', $item->id) }}" target="_blank" class="px-2 py-1 bg-teal-500 text-white rounded text-xs inline-block" title="Print Token">&#128424;</a>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
