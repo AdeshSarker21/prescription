@@ -378,6 +378,7 @@ Route::middleware(['auth', 'verified', 'role:doctor', 'subscription'])->prefix('
         Route::get('/{session}/status', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'queueStatus'])->name('queue-status');
         Route::get('/settings', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'settings'])->name('settings');
         Route::post('/settings', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/queue/{queueId}/print-token', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'printToken'])->name('print-token');
     });
 
     // Add-on Management
@@ -441,6 +442,8 @@ Route::middleware(['auth', 'verified', 'role:assistant', 'assistant.access'])->p
         Route::patch('/queue/{queueId}/skip', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'skip'])->name('skip');
         Route::patch('/queue/{queueId}/emergency', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'emergency'])->name('emergency');
         Route::get('/{session}/status', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'queueStatus'])->name('queue-status');
+        Route::get('/queue/{queueId}/print-token', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'printToken'])->name('print-token');
+        Route::get('/display/doctor/{doctorId}', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'displayByDoctor'])->name('display.doctor');
     });
 
     // Notifications
@@ -469,6 +472,7 @@ Route::get('/language/{locale}', function ($locale) {
 // Patient Display (guest-accessible, no auth required)
 Route::get('/display/{sessionId}', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'display'])->name('smart-serial.display');
 Route::get('/display/{sessionId}/status', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'displayStatus'])->name('smart-serial.display.status');
+Route::get('/display/doctor/{doctorId}', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'displayByDoctor'])->name('smart-serial.display.doctor');
 
 // Register route
 Route::post('/register', [RegisterController::class, 'register']);

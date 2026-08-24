@@ -47,6 +47,7 @@
                     <span class="text-xs font-medium" style="color:var(--text-muted);">Voice</span>
                 </label>
                 <span x-show="voiceStatus" x-text="voiceStatus" class="text-xs px-2 py-1 rounded-full" style="background:rgba(245,158,11,0.1);color:#d97706;"></span>
+                <a href="{{ route('smart-serial.display.doctor', Auth::id()) }}" target="_blank" class="text-sm font-medium transition-all" style="color:#059669;padding:6px 14px;border-radius:8px;background:rgba(16,185,129,0.08);">&#128250; Patient Display</a>
                 <a href="{{ route('doctor.smart-serial.index') }}" class="text-sm font-medium transition-all" style="color:#6366f1;padding:6px 14px;border-radius:8px;background:rgba(99,102,241,0.08);">Open Queue &rarr;</a>
             </div>
         </div>
@@ -350,8 +351,9 @@
                             'bg-blue-50': item.status === 'inside',
                             'bg-green-50': item.status === 'completed',
                             'bg-purple-50': item.status === 'preparing',
+                            'bg-red-50': item.priority === 'emergency' && item.status !== 'completed' && item.status !== 'cancelled',
                             'opacity-50': item.status === 'cancelled' || item.status === 'skipped'
-                        }">
+                        }" :style="item.priority === 'emergency' && item.status !== 'completed' && item.status !== 'cancelled' ? 'border-left:4px solid #ef4444;' : ''">
                             <td><span class="font-bold text-lg" style="color:var(--text-primary);" x-text="'#' + (item.formatted_serial || String(item.serial_number).padStart(3, '0'))"></span></td>
                             <td><span class="font-medium" style="color:var(--text-primary);" x-text="item.patient?.name || 'N/A'"></span></td>
                             <td>
@@ -361,7 +363,10 @@
                                         'bg-orange-100 text-orange-700': item.priority === 'urgent',
                                         'bg-purple-100 text-purple-700': item.priority === 'vip',
                                         'bg-gray-100 text-gray-700': item.priority === 'normal'
-                                    }" x-text="item.priority.toUpperCase()"></span>
+                                    }">
+                                    <span x-show="item.priority === 'emergency'">&#128680; </span>
+                                    <span x-text="item.priority.toUpperCase()"></span>
+                                </span>
                             </td>
                             <td>
                                 <span class="px-2 py-1 rounded-full text-xs font-semibold"
@@ -566,7 +571,11 @@ function serialDashboard() {
                             const name = called.patient?.name || 'Unknown';
                             const gender = called.patient?.gender || '';
                             const prefix = this.getGenderPrefix(gender);
-                            this.speak(`${prefix} ${name}, আপনি এবার ভিতরে প্রবেশ করুন।`, 'calling');
+                            if (called.priority === 'emergency') {
+                                this.speak(`জরুরি! ${prefix} ${name}, আপনি এবার ভিতরে প্রবেশ করুন।`, 'emergency');
+                            } else {
+                                this.speak(`${prefix} ${name}, আপনি এবার ভিতরে প্রবেশ করুন।`, 'calling');
+                            }
                         }
                     }
                     if (!called) this.lastCalledId = null;

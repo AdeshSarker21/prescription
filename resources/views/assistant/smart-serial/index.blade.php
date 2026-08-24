@@ -9,8 +9,11 @@
             <h1 class="text-2xl font-bold text-gray-900">Smart Serial Queue</h1>
             <p class="text-gray-500 mt-1">Manage patient queue</p>
         </div>
-        @if($session && $session->status === 'active')
-            <div class="flex gap-2">
+        <div class="flex gap-2 items-center">
+            @if($session)
+                <a href="{{ route('assistant.smart-serial.display.doctor', $session->doctor_id) }}" target="_blank" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">&#128250; Patient Display</a>
+            @endif
+            @if($session && $session->status === 'active')
                 <form method="POST" action="{{ route('assistant.smart-serial.pause', $session->id) }}">
                     @csrf @method('PATCH')
                     <button type="submit" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Pause</button>
@@ -19,18 +22,18 @@
                     @csrf @method('PATCH')
                     <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Close</button>
                 </form>
-            </div>
-        @elseif($session && $session->status === 'paused')
-            <form method="POST" action="{{ route('assistant.smart-serial.resume', $session->id) }}">
-                @csrf @method('PATCH')
-                <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Resume</button>
-            </form>
-        @else
-            <form method="POST" action="{{ route('assistant.smart-serial.start') }}">
-                @csrf
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Start Session</button>
-            </form>
-        @endif
+            @elseif($session && $session->status === 'paused')
+                <form method="POST" action="{{ route('assistant.smart-serial.resume', $session->id) }}">
+                    @csrf @method('PATCH')
+                    <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Resume</button>
+                </form>
+            @else
+                <form method="POST" action="{{ route('assistant.smart-serial.start') }}">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Start Session</button>
+                </form>
+            @endif
+        </div>
     </div>
 
     @if(session('success'))

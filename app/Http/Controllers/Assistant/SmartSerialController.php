@@ -392,4 +392,69 @@ class SmartSerialController extends Controller
             ],
         ]);
     }
+
+    public function printToken($queueId)
+    {
+        $queue = PatientQueue::with(['patient', 'session.chamber', 'doctor'])->findOrFail($queueId);
+        $assistantId = Auth::id();
+        $accessibleDoctorIds = Auth::user()->_accessible_doctor_ids ?? [$assistantId];
+
+        if (!in_array($queue->doctor_id, $accessibleDoctorIds)) {
+            abort(403, 'You do not have access to print this token.');
+        }
+
+        $doctor = $queue->doctor;
+        $chamberName = $queue->session->chamber->name ?? '';
+        $clinicName = $doctor->clinic_name ?? '';
+        $clinicNameBn = $doctor->clinic_name_bn ?? '';
+
+        return view('doctor.smart-serial.token-print', compact('queue', 'doctor', 'chamberName', 'clinicName', 'clinicNameBn'));
+    }
+
+    public function displayByDoctor($doctorId)
+    {
+        $assistantId = Auth::id();
+        $accessibleDoctorIds = Auth::user()->_accessible_doctor_ids ?? [$assistantId];
+
+        if (!in_array($doctorId, $accessibleDoctorIds)) {
+            abort(403, 'You do not have access to this doctor\'s display.');
+        }
+
+        $today = now()->toDateString();
+        $session = SerialSession::with('doctor', 'chamber')
+            ->where('doctor_id', $doctorId)
+            ->where('session_date', $today)
+            ->whereIn('status', ['active', 'paused'])
+            ->latest()
+            ->first();
+
+        if (!$session) {
+            abort(404, 'No active session found for this doctor today.');
+        }
+
+        $queue = $session->patientQueues()
+            ->with('patient')
+            ->whereIn('status', ['waiting', 'preparing', 'calling', 'inside'])
+            ->orderBy('serial_number')
+            ->get();
+
+        $currentCalled = $session->patientQueues()
+            ->with('patient')
+            ->where('status', 'calling')
+            ->first();
+
+        $nextInQueue = $session->patientQueues()
+            ->with('patient')
+            ->where('status', 'preparing')
+            ->orderBy('serial_number')
+            ->first();
+
+        $doctor = $session->doctor;
+        $chamberName = $session->chamber->name ?? '';
+        $settings = SmartSerialSetting::where('doctor_id', $doctor->id)->first();
+
+        return view('doctor.smart-serial.display', compact(
+            'session', 'queue', 'currentCalled', 'nextInQueue', 'doctor', 'chamberName', 'settings'
+        ));
+    }
 }
