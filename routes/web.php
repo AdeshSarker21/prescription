@@ -364,6 +364,8 @@ Route::middleware(['auth', 'verified', 'role:doctor', 'subscription'])->prefix('
         Route::patch('/{session}/pause', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'pauseSession'])->name('pause');
         Route::patch('/{session}/resume', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'resumeSession'])->name('resume');
         Route::post('/add-patient', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'addPatient'])->name('add-patient');
+        Route::patch('/{session}/prepare', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'prepare'])->name('prepare');
+        Route::patch('/queue/{queueId}/prepare', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'preparePatient'])->name('prepare-patient');
         Route::patch('/{session}/call-next', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'callNext'])->name('call-next');
         Route::patch('/queue/{queueId}/call', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'callPatient'])->name('call-patient');
         Route::patch('/queue/{queueId}/start-consultation', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'startConsultation'])->name('start-consultation');
@@ -427,6 +429,8 @@ Route::middleware(['auth', 'verified', 'role:assistant', 'assistant.access'])->p
         Route::patch('/{session}/pause', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'pauseSession'])->name('pause');
         Route::patch('/{session}/resume', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'resumeSession'])->name('resume');
         Route::post('/add-patient', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'addPatient'])->name('add-patient');
+        Route::patch('/{session}/prepare', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'prepare'])->name('prepare');
+        Route::patch('/queue/{queueId}/prepare', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'preparePatient'])->name('prepare-patient');
         Route::patch('/{session}/call-next', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'callNext'])->name('call-next');
         Route::patch('/queue/{queueId}/call', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'callPatient'])->name('call-patient');
         Route::patch('/queue/{queueId}/start-consultation', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'startConsultation'])->name('start-consultation');

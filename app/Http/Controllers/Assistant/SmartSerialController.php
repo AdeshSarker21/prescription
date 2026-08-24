@@ -189,7 +189,9 @@ class SmartSerialController extends Controller
         if ($q->doctor_id !== Auth::id()) {
             return $this->denyAccess($request, 'You do not own this queue entry.');
         }
-        if ($q->status !== PatientQueue::STATUS_WAITING) return back()->with('error', 'Not waiting.');
+        if (!in_array($q->status, [PatientQueue::STATUS_WAITING, PatientQueue::STATUS_PREPARING])) {
+            return back()->with('error', 'Patient is not waiting or preparing.');
+        }
 
         $q->transitionTo(PatientQueue::STATUS_CALLING, 'assistant');
         return back()->with('success', "Called: {$q->patient->name}");
@@ -284,6 +286,86 @@ class SmartSerialController extends Controller
         }
 
         return back()->with('success', 'Emergency set. Called immediately.');
+    }
+
+    public function prepare(Request $request, SerialSession $session)
+    {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'prepare') || $session->doctor_id !== Auth::id()) {
+            return $this->denyAccess($request);
+        }
+        if ($session->status !== 'active') return back()->with('error', 'Session not active.');
+
+        $nextPatient = null;
+        foreach (['emergency', 'urgent', 'vip', 'normal'] as $p) {
+            $nextPatient = $session->patientQueues()->where('status', 'waiting')->where('priority', $p)->orderBy('serial_number')->first();
+            if ($nextPatient) break;
+        }
+        if (!$nextPatient) return back()->with('error', 'No patients waiting.');
+
+        $nextPatient->transitionTo(PatientQueue::STATUS_PREPARING, 'assistant');
+        return back()->with('success', "Preparing: {$nextPatient->patient->name} (#{$nextPatient->formatted_serial})");
+    }
+
+    public function preparePatient(Request $request, $queueId)
+    {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'prepare')) {
+            return $this->denyAccess($request);
+        }
+        $q = PatientQueue::findOrFail($queueId);
+        if ($q->doctor_id !== Auth::id()) {
+            return $this->denyAccess($request, 'You do not own this queue entry.');
+        }
+        if ($q->status !== PatientQueue::STATUS_WAITING) return back()->with('error', 'Patient is not waiting.');
+
+        $q->transitionTo(PatientQueue::STATUS_PREPARING, 'assistant');
+        return back()->with('success', "Preparing: {$q->patient->name}");
+    }
+
+    public function recall(Request $request, $queueId)
+    {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'recall')) {
+            return $this->denyAccess($request);
+        }
+        $q = PatientQueue::findOrFail($queueId);
+        if ($q->doctor_id !== Auth::id()) {
+            return $this->denyAccess($request, 'You do not own this queue entry.');
+        }
+
+        if ($q->status === PatientQueue::STATUS_COMPLETED) {
+            $q->transitionTo(PatientQueue::STATUS_CALLING, 'assistant', 'Recalled after completion');
+            return back()->with('success', "Recalled: {$q->patient->name}");
+        }
+
+        if ($q->status === PatientQueue::STATUS_CALLING) {
+            $q->logStatusChange(PatientQueue::STATUS_CALLING, 'assistant', 'Re-announced');
+            return back()->with('success', "Re-announced: {$q->patient->name}");
+        }
+
+        return back()->with('error', 'Patient cannot be recalled from current status.');
+    }
+
+    public function noShow(Request $request, $queueId)
+    {
+        if (!Auth::user()->hasModulePermission('smart_serial', 'skip')) {
+            return $this->denyAccess($request);
+        }
+        $q = PatientQueue::findOrFail($queueId);
+        if ($q->doctor_id !== Auth::id()) {
+            return $this->denyAccess($request, 'You do not own this queue entry.');
+        }
+
+        $q->update(['notes' => ($q->notes ? $q->notes . ' | ' : '') . 'No Show']);
+        $q->transitionTo(PatientQueue::STATUS_CANCELLED, 'assistant', 'Marked as No Show');
+
+        $next = PatientQueue::where('serial_session_id', $q->serial_session_id)
+            ->where('status', 'waiting')
+            ->where('id', '!=', $q->id)
+            ->orderBy('serial_number')
+            ->first();
+        if ($next) {
+            $next->transitionTo(PatientQueue::STATUS_CALLING, 'system', 'Auto-called after no-show');
+        }
+        return back()->with('success', 'Marked as No Show. Next called.');
     }
 
     public function queueStatus(Request $request, SerialSession $session)

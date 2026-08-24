@@ -73,12 +73,20 @@
         <div class="bg-white rounded-xl shadow">
             <div class="p-4 border-b flex items-center justify-between">
                 <h3 class="font-semibold">Queue ({{ $queue->count() }} patients)</h3>
-                @if(in_array('call_next', $permissions) && $session->status === 'active')
-                <form method="POST" action="{{ route('assistant.smart-serial.call-next', $session->id) }}">
-                    @csrf @method('PATCH')
-                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Call Next</button>
-                </form>
-                @endif
+                <div class="flex gap-2">
+                    @if(in_array('prepare', $permissions) && $session->status === 'active')
+                    <form method="POST" action="{{ route('assistant.smart-serial.prepare', $session->id) }}">
+                        @csrf @method('PATCH')
+                        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Next Patient</button>
+                    </form>
+                    @endif
+                    @if(in_array('call_next', $permissions) && $session->status === 'active')
+                    <form method="POST" action="{{ route('assistant.smart-serial.call-next', $session->id) }}">
+                        @csrf @method('PATCH')
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Call Next</button>
+                    </form>
+                    @endif
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -128,7 +136,19 @@
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex gap-1 flex-wrap">
+                                    @if($item->status === 'waiting' && in_array('prepare', $permissions))
+                                        <form method="POST" action="{{ route('assistant.smart-serial.prepare-patient', $item->id) }}">
+                                            @csrf @method('PATCH')
+                                            <button class="px-2 py-1 bg-purple-500 text-white rounded text-xs">Prepare</button>
+                                        </form>
+                                    @endif
                                     @if($item->status === 'waiting' && in_array('call_next', $permissions))
+                                        <form method="POST" action="{{ route('assistant.smart-serial.call-patient', $item->id) }}">
+                                            @csrf @method('PATCH')
+                                            <button class="px-2 py-1 bg-blue-500 text-white rounded text-xs">Call</button>
+                                        </form>
+                                    @endif
+                                    @if($item->status === 'preparing' && in_array('call_next', $permissions))
                                         <form method="POST" action="{{ route('assistant.smart-serial.call-patient', $item->id) }}">
                                             @csrf @method('PATCH')
                                             <button class="px-2 py-1 bg-blue-500 text-white rounded text-xs">Call</button>

@@ -257,6 +257,17 @@
         <div class="flex items-center justify-between flex-wrap gap-3">
             <h3 class="text-sm font-bold uppercase tracking-wider" style="color:var(--text-muted);">Quick Actions</h3>
             <div class="flex gap-2 flex-wrap">
+                @if(in_array('prepare', $permissions))
+                <form method="POST" action="{{ route('doctor.smart-serial.prepare', $session->id) }}">
+                    @csrf @method('PATCH')
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);box-shadow:0 4px 14px rgba(139,92,246,0.25);">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                            Next Patient
+                        </span>
+                    </button>
+                </form>
+                @endif
                 <form method="POST" action="{{ route('doctor.smart-serial.call-next', $session->id) }}">
                     @csrf @method('PATCH')
                     <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all" style="background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 14px rgba(16,185,129,0.25);">
@@ -367,6 +378,12 @@
                             <td style="color:var(--text-muted);" x-text="new Date(item.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})"></td>
                             <td>
                                 <div class="flex gap-1 flex-wrap">
+                                    <template x-if="item.status === 'waiting' && hasPermission('prepare')">
+                                        <form method="POST" :action="'/doctor/smart-serial/queue/' + item.id + '/prepare'">
+                                            @csrf @method('PATCH')
+                                            <button class="px-2 py-1 bg-purple-500 text-white rounded text-xs hover:bg-purple-600">Prepare</button>
+                                        </form>
+                                    </template>
                                     <template x-if="item.status === 'waiting' && hasPermission('call_next')">
                                         <form method="POST" :action="'/doctor/smart-serial/queue/' + item.id + '/call'">
                                             @csrf @method('PATCH')
@@ -455,14 +472,20 @@ function serialDashboard() {
         sessionId: @js($session?->id),
         refreshTimer: null,
         lastCalledId: null,
+        lastPreparingId: null,
 
         init() {
             this.refreshQueue();
             this.refreshTimer = setInterval(() => this.refreshQueue(), 5000);
+            const preparing = this.queue.find(q => q.status === 'preparing');
+            if (preparing) {
+                this.lastPreparingId = preparing.id;
+                this.announcePreparing(preparing);
+            }
             const called = this.queue.find(q => q.status === 'calling');
             if (called) {
                 this.lastCalledId = called.id;
-                this.announce(called);
+                this.announceCalling(called);
             }
         },
 
@@ -478,22 +501,43 @@ function serialDashboard() {
                 if (data.queue) {
                     this.queue = data.queue;
                     this.stats = data.stats;
+
+                    const preparing = data.queue.find(q => q.status === 'preparing');
+                    if (preparing && preparing.id !== this.lastPreparingId) {
+                        this.lastPreparingId = preparing.id;
+                        this.announcePreparing(preparing);
+                    }
+                    if (!preparing) this.lastPreparingId = null;
+
                     const called = data.queue.find(q => q.status === 'calling');
                     if (called && called.id !== this.lastCalledId) {
                         this.lastCalledId = called.id;
-                        this.announce(called);
+                        this.announceCalling(called);
                     }
                     if (!called) this.lastCalledId = null;
                 }
             } catch(e) {}
         },
 
-        announce(patient) {
+        announcePreparing(patient) {
+            if (!this.voiceEnabled || !patient || !patient.patient) return;
+            const name = patient.patient.name || 'Unknown';
+            const msg = `এর পরে সিরিয়াল ${name}, আপনি প্রস্তুত থাকুন।`;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const u = new SpeechSynthesisUtterance(msg);
+                u.lang = 'bn-BD';
+                u.rate = 0.9;
+                u.pitch = 1;
+                window.speechSynthesis.speak(u);
+            }
+        },
+
+        announceCalling(patient) {
             if (!this.voiceEnabled || !patient || !patient.patient) return;
             const name = patient.patient.name || 'Unknown';
             const serial = patient.formatted_serial || String(patient.serial_number).padStart(3, '0');
-            const priority = patient.priority !== 'normal' ? `, ${patient.priority.toUpperCase()} priority` : '';
-            const msg = `Now calling number ${serial}, ${name}${priority}. Please come to the chamber.`;
+            const msg = `সিরিয়াল নম্বর ${serial}, ${name}, আপনাকে ডাকা হচ্ছে। দয়া করে চেম্বারে প্রবেশ করুন।`;
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const u = new SpeechSynthesisUtterance(msg);
