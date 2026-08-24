@@ -466,6 +466,10 @@ Route::get('/language/{locale}', function ($locale) {
     return redirect()->back();
 })->name('language.switch');
 
+// Patient Display (guest-accessible, no auth required)
+Route::get('/display/{sessionId}', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'display'])->name('smart-serial.display');
+Route::get('/display/{sessionId}/status', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'displayStatus'])->name('smart-serial.display.status');
+
 // Register route
 Route::post('/register', [RegisterController::class, 'register']);
 

@@ -332,13 +332,15 @@ class SmartSerialController extends Controller
         }
 
         if ($q->status === PatientQueue::STATUS_COMPLETED) {
+            $q->update(['notes' => ($q->notes ? $q->notes . ' | ' : '') . 'Recalled']);
             $q->transitionTo(PatientQueue::STATUS_CALLING, 'assistant', 'Recalled after completion');
             return back()->with('success', "Recalled: {$q->patient->name}");
         }
 
         if ($q->status === PatientQueue::STATUS_CALLING) {
-            $q->logStatusChange(PatientQueue::STATUS_CALLING, 'assistant', 'Re-announced');
-            return back()->with('success', "Re-announced: {$q->patient->name}");
+            $q->update(['notes' => ($q->notes ? $q->notes . ' | ' : '') . 'Recalled']);
+            $q->logStatusChange(PatientQueue::STATUS_CALLING, 'assistant', 'Recalled (re-announced)');
+            return back()->with('success', "Recalled: {$q->patient->name}");
         }
 
         return back()->with('error', 'Patient cannot be recalled from current status.');

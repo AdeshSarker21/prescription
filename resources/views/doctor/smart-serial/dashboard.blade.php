@@ -46,6 +46,7 @@
                     <input type="checkbox" x-model="voiceEnabled" class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                     <span class="text-xs font-medium" style="color:var(--text-muted);">Voice</span>
                 </label>
+                <span x-show="voiceStatus" x-text="voiceStatus" class="text-xs px-2 py-1 rounded-full" style="background:rgba(245,158,11,0.1);color:#d97706;"></span>
                 <a href="{{ route('doctor.smart-serial.index') }}" class="text-sm font-medium transition-all" style="color:#6366f1;padding:6px 14px;border-radius:8px;background:rgba(99,102,241,0.08);">Open Queue &rarr;</a>
             </div>
         </div>
@@ -465,7 +466,7 @@
 <script>
 function serialDashboard() {
     return {
-        voiceEnabled: true,
+        voiceEnabled: @json($voiceEnabled),
         queue: @js($queue->values()->toArray()),
         stats: @js($stats),
         permissions: @js($permissions),
@@ -473,24 +474,66 @@ function serialDashboard() {
         refreshTimer: null,
         lastCalledId: null,
         lastPreparingId: null,
+        lastRecalledId: null,
+        announcedIds: new Set(),
+        speechUnlocked: false,
+        pendingAnnouncement: null,
+        voiceStatus: '',
 
         init() {
+            this.loadAnnouncedFromStorage();
+            this.unlockSpeechOnInteraction();
             this.refreshQueue();
             this.refreshTimer = setInterval(() => this.refreshQueue(), 5000);
-            const preparing = this.queue.find(q => q.status === 'preparing');
-            if (preparing) {
-                this.lastPreparingId = preparing.id;
-                this.announcePreparing(preparing);
-            }
-            const called = this.queue.find(q => q.status === 'calling');
-            if (called) {
-                this.lastCalledId = called.id;
-                this.announceCalling(called);
-            }
+        },
+
+        loadAnnouncedFromStorage() {
+            try {
+                const stored = localStorage.getItem('smart_serial_announced_' + this.sessionId);
+                if (stored) {
+                    const ids = JSON.parse(stored);
+                    ids.forEach(id => this.announcedIds.add(id));
+                }
+            } catch(e) {}
+        },
+
+        saveAnnouncedToStorage() {
+            try {
+                localStorage.setItem(
+                    'smart_serial_announced_' + this.sessionId,
+                    JSON.stringify([...this.announcedIds])
+                );
+            } catch(e) {}
+        },
+
+        unlockSpeechOnInteraction() {
+            if (this.speechUnlocked) return;
+            const unlock = () => {
+                if (this.speechUnlocked) return;
+                this.speechUnlocked = true;
+                this.voiceStatus = '';
+                document.removeEventListener('click', unlock);
+                document.removeEventListener('keydown', unlock);
+                document.removeEventListener('touchstart', unlock);
+                if (this.pendingAnnouncement) {
+                    const pending = this.pendingAnnouncement;
+                    this.pendingAnnouncement = null;
+                    this.speak(pending.msg, pending.type);
+                }
+            };
+            document.addEventListener('click', unlock);
+            document.addEventListener('keydown', unlock);
+            document.addEventListener('touchstart', unlock);
         },
 
         hasPermission(perm) {
             return this.permissions.includes(perm);
+        },
+
+        getGenderPrefix(gender) {
+            if (gender === 'male') return 'জনাব';
+            if (gender === 'female') return 'জনাবা';
+            return 'জনাব';
         },
 
         async refreshQueue() {
@@ -505,46 +548,78 @@ function serialDashboard() {
                     const preparing = data.queue.find(q => q.status === 'preparing');
                     if (preparing && preparing.id !== this.lastPreparingId) {
                         this.lastPreparingId = preparing.id;
-                        this.announcePreparing(preparing);
+                        if (!this.announcedIds.has('preparing_' + preparing.id)) {
+                            this.announcedIds.add('preparing_' + preparing.id);
+                            this.saveAnnouncedToStorage();
+                            const name = preparing.patient?.name || 'Unknown';
+                            this.speak(`এর পরে সিরিয়াল ${name}, আপনি প্রস্তুত থাকুন।`, 'preparing');
+                        }
                     }
                     if (!preparing) this.lastPreparingId = null;
 
                     const called = data.queue.find(q => q.status === 'calling');
                     if (called && called.id !== this.lastCalledId) {
                         this.lastCalledId = called.id;
-                        this.announceCalling(called);
+                        if (!this.announcedIds.has('calling_' + called.id)) {
+                            this.announcedIds.add('calling_' + called.id);
+                            this.saveAnnouncedToStorage();
+                            const name = called.patient?.name || 'Unknown';
+                            const gender = called.patient?.gender || '';
+                            const prefix = this.getGenderPrefix(gender);
+                            this.speak(`${prefix} ${name}, আপনি এবার ভিতরে প্রবেশ করুন।`, 'calling');
+                        }
                     }
                     if (!called) this.lastCalledId = null;
+
+                    const recalled = data.queue.find(q => q.status === 'calling' && q.notes && q.notes.includes('Recalled'));
+                    if (recalled && recalled.id !== this.lastRecalledId) {
+                        this.lastRecalledId = recalled.id;
+                        const recallKey = 'recall_' + recalled.id + '_' + recalled.updated_at;
+                        if (!this.announcedIds.has(recallKey)) {
+                            this.announcedIds.add(recallKey);
+                            this.saveAnnouncedToStorage();
+                            const name = recalled.patient?.name || 'Unknown';
+                            this.speak(`${name}, আপনার সিরিয়াল আবার ডাকা হচ্ছে।`, 'recall');
+                        }
+                    }
+                    if (!recalled) this.lastRecalledId = null;
                 }
             } catch(e) {}
         },
 
-        announcePreparing(patient) {
-            if (!this.voiceEnabled || !patient || !patient.patient) return;
-            const name = patient.patient.name || 'Unknown';
-            const msg = `এর পরে সিরিয়াল ${name}, আপনি প্রস্তুত থাকুন।`;
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(msg);
-                u.lang = 'bn-BD';
-                u.rate = 0.9;
-                u.pitch = 1;
-                window.speechSynthesis.speak(u);
+        speak(msg, type) {
+            if (!this.voiceEnabled) return;
+            if (!('speechSynthesis' in window)) {
+                this.voiceStatus = 'Speech not supported in this browser.';
+                console.warn('Web Speech API not available');
+                return;
             }
-        },
-
-        announceCalling(patient) {
-            if (!this.voiceEnabled || !patient || !patient.patient) return;
-            const name = patient.patient.name || 'Unknown';
-            const serial = patient.formatted_serial || String(patient.serial_number).padStart(3, '0');
-            const msg = `সিরিয়াল নম্বর ${serial}, ${name}, আপনাকে ডাকা হচ্ছে। দয়া করে চেম্বারে প্রবেশ করুন।`;
-            if ('speechSynthesis' in window) {
+            if (!this.speechUnlocked) {
+                this.pendingAnnouncement = { msg, type };
+                this.voiceStatus = 'Click anywhere to enable voice.';
+                return;
+            }
+            this.voiceStatus = '';
+            try {
                 window.speechSynthesis.cancel();
                 const u = new SpeechSynthesisUtterance(msg);
                 u.lang = 'bn-BD';
                 u.rate = 0.9;
                 u.pitch = 1;
+                u.onerror = (e) => {
+                    console.error('Speech error:', e.error);
+                    if (e.error === 'not-allowed' || e.error === 'canceled') {
+                        this.voiceStatus = 'Voice blocked. Click the page to enable.';
+                        this.speechUnlocked = false;
+                        this.pendingAnnouncement = { msg, type };
+                        this.unlockSpeechOnInteraction();
+                    }
+                };
+                u.onend = () => { this.voiceStatus = ''; };
                 window.speechSynthesis.speak(u);
+            } catch(e) {
+                console.error('Speech failed:', e);
+                this.voiceStatus = 'Voice unavailable.';
             }
         },
 

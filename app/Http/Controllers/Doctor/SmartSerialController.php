@@ -83,11 +83,13 @@ class SmartSerialController extends Controller
         }
 
         $currentChamber = $session?->chamber ?? $chambers->first();
+        $settings = SmartSerialSetting::where('doctor_id', $doctorId)->first();
+        $voiceEnabled = $settings ? $settings->voice_enabled : true;
 
         return view('doctor.smart-serial.dashboard', compact(
             'session', 'stats', 'doctor', 'currentChamber', 'nextPatient',
             'currentCalled', 'emergencyCount', 'avgWaitMinutes', 'nextSerial',
-            'queue', 'permissions', 'chambers', 'activeChamberId'
+            'queue', 'permissions', 'chambers', 'activeChamberId', 'voiceEnabled'
         ));
     }
 
@@ -499,13 +501,15 @@ class SmartSerialController extends Controller
         }
 
         if ($q->status === PatientQueue::STATUS_COMPLETED) {
+            $q->update(['notes' => ($q->notes ? $q->notes . ' | ' : '') . 'Recalled']);
             $q->transitionTo(PatientQueue::STATUS_CALLING, 'doctor', 'Recalled after completion');
             return back()->with('success', "Recalled: {$q->patient->name}");
         }
 
         if ($q->status === PatientQueue::STATUS_CALLING) {
-            $q->logStatusChange(PatientQueue::STATUS_CALLING, 'doctor', 'Re-announced');
-            return back()->with('success', "Re-announced: {$q->patient->name}");
+            $q->update(['notes' => ($q->notes ? $q->notes . ' | ' : '') . 'Recalled']);
+            $q->logStatusChange(PatientQueue::STATUS_CALLING, 'doctor', 'Recalled (re-announced)');
+            return back()->with('success', "Recalled: {$q->patient->name}");
         }
 
         return back()->with('error', 'Patient cannot be recalled from current status.');
@@ -594,5 +598,58 @@ class SmartSerialController extends Controller
         }
         $logs = $q->statusLogs()->orderBy('created_at', 'desc')->get();
         return response()->json(['logs' => $logs]);
+    }
+
+    public function display(Request $request, $sessionId)
+    {
+        $session = SerialSession::with('doctor', 'chamber')->find($sessionId);
+        if (!$session || $session->status === 'closed') {
+            abort(404);
+        }
+
+        $queue = $session->patientQueues()
+            ->with('patient')
+            ->whereIn('status', ['waiting', 'preparing', 'calling', 'inside'])
+            ->orderBy('serial_number')
+            ->get();
+
+        $currentCalled = $session->patientQueues()
+            ->with('patient')
+            ->where('status', 'calling')
+            ->first();
+
+        $doctorName = $session->doctor->name ?? 'Doctor';
+        $chamberName = $session->chamber->name ?? '';
+
+        return view('doctor.smart-serial.display', compact(
+            'session', 'queue', 'currentCalled', 'doctorName', 'chamberName'
+        ));
+    }
+
+    public function displayStatus(Request $request, $sessionId)
+    {
+        $session = SerialSession::find($sessionId);
+        if (!$session) {
+            return response()->json(['error' => 'Session not found'], 404);
+        }
+
+        $queue = $session->patientQueues()
+            ->with('patient')
+            ->whereIn('status', ['waiting', 'preparing', 'calling', 'inside'])
+            ->orderBy('serial_number')
+            ->get();
+
+        $currentCalled = $session->patientQueues()
+            ->with('patient')
+            ->where('status', 'calling')
+            ->first();
+
+        return response()->json([
+            'session_status' => $session->status,
+            'queue' => $queue,
+            'current_called' => $currentCalled,
+            'doctor_name' => $session->doctor->name ?? 'Doctor',
+            'chamber_name' => $session->chamber->name ?? '',
+        ]);
     }
 }
