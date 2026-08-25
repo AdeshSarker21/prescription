@@ -149,6 +149,13 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('/doctor-feature-settings', [\App\Http\Controllers\Admin\DoctorFeatureSettingController::class, 'index'])->name('doctor-feature-settings.index');
     Route::patch('/doctor-feature-settings/{doctorId}', [\App\Http\Controllers\Admin\DoctorFeatureSettingController::class, 'update'])->name('doctor-feature-settings.update');
 
+    // Smart Serial Voice Settings
+    Route::get('/smart-serial-voice', [\App\Http\Controllers\Admin\SmartSerialVoiceSettingController::class, 'index'])->name('smart-serial-voice.index');
+    Route::get('/smart-serial-voice/{doctorId}/edit', [\App\Http\Controllers\Admin\SmartSerialVoiceSettingController::class, 'edit'])->name('smart-serial-voice.edit');
+    Route::patch('/smart-serial-voice/{doctorId}', [\App\Http\Controllers\Admin\SmartSerialVoiceSettingController::class, 'update'])->name('smart-serial-voice.update');
+    Route::post('/smart-serial-voice/test', [\App\Http\Controllers\Admin\SmartSerialVoiceSettingController::class, 'testTts'])->name('smart-serial-voice.test');
+    Route::get('/smart-serial-voice/clear-cache', [\App\Http\Controllers\Admin\SmartSerialVoiceSettingController::class, 'clearCache'])->name('smart-serial-voice.clear-cache');
+
     // Assistant Management
     Route::get('/assistants', [\App\Http\Controllers\Admin\AssistantController::class, 'index'])->name('assistants.index');
     Route::get('/assistants/create', [\App\Http\Controllers\Admin\AssistantController::class, 'create'])->name('assistants.create');
@@ -196,6 +203,13 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('/chambers/{chamber}/edit', [\App\Http\Controllers\Admin\ChamberController::class, 'edit'])->name('chambers.edit');
     Route::patch('/chambers/{chamber}', [\App\Http\Controllers\Admin\ChamberController::class, 'update'])->name('chambers.update');
     Route::delete('/chambers/{chamber}', [\App\Http\Controllers\Admin\ChamberController::class, 'destroy'])->name('chambers.destroy');
+});
+
+// Smart Serial TTS API (public — used by Patient Display)
+Route::prefix('smart-serial/tts')->name('smart-serial.tts.')->group(function () {
+    Route::post('/generate', [\App\Http\Controllers\SmartSerialTtsController::class, 'generateAnnouncement'])->name('generate');
+    Route::get('/audio', [\App\Http\Controllers\SmartSerialTtsController::class, 'getAudioFile'])->name('audio');
+    Route::get('/cache-check', [\App\Http\Controllers\SmartSerialTtsController::class, 'checkCache'])->name('cache-check');
 });
 
 // Subscription routes (user-facing)
@@ -353,6 +367,15 @@ Route::middleware(['auth', 'verified', 'role:doctor', 'subscription'])->prefix('
     Route::patch('/sms-center/templates/{id}', [\App\Http\Controllers\Doctor\SmsCenterController::class, 'updateTemplate'])->name('sms-center.templates.update');
     Route::delete('/sms-center/templates/{id}', [\App\Http\Controllers\Doctor\SmsCenterController::class, 'destroyTemplate'])->name('sms-center.templates.destroy');
 
+    // Notices
+    Route::get('/notices', [\App\Http\Controllers\Doctor\NoticeController::class, 'index'])->name('notices.index');
+    Route::get('/notices/create', [\App\Http\Controllers\Doctor\NoticeController::class, 'create'])->name('notices.create');
+    Route::post('/notices', [\App\Http\Controllers\Doctor\NoticeController::class, 'store'])->name('notices.store');
+    Route::get('/notices/{notice}/edit', [\App\Http\Controllers\Doctor\NoticeController::class, 'edit'])->name('notices.edit');
+    Route::patch('/notices/{notice}', [\App\Http\Controllers\Doctor\NoticeController::class, 'update'])->name('notices.update');
+    Route::delete('/notices/{notice}', [\App\Http\Controllers\Doctor\NoticeController::class, 'destroy'])->name('notices.destroy');
+    Route::patch('/notices/{notice}/toggle', [\App\Http\Controllers\Doctor\NoticeController::class, 'toggle'])->name('notices.toggle');
+
     // Smart Serial Queue
     Route::middleware(['module:smart_serial', 'smart_serial.access'])->prefix('smart-serial')->name('smart-serial.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Doctor\SmartSerialController::class, 'dashboard'])->name('dashboard');
@@ -444,6 +467,16 @@ Route::middleware(['auth', 'verified', 'role:assistant', 'assistant.access'])->p
         Route::get('/{session}/status', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'queueStatus'])->name('queue-status');
         Route::get('/queue/{queueId}/print-token', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'printToken'])->name('print-token');
         Route::get('/display/doctor/{doctorId}', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'displayByDoctor'])->name('display.doctor');
+    });
+
+    // Receptionist Smart Serial (restricted queue management)
+    Route::middleware(['module:smart_serial', 'smart_serial.access'])->prefix('receptionist/smart-serial')->name('receptionist.smart-serial.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Receptionist\SmartSerialController::class, 'index'])->name('index');
+        Route::post('/add-patient', [\App\Http\Controllers\Receptionist\SmartSerialController::class, 'addPatient'])->name('add-patient');
+        Route::get('/search-patients', [\App\Http\Controllers\Receptionist\SmartSerialController::class, 'searchPatients'])->name('search-patients');
+        Route::patch('/queue/{queueId}/update', [\App\Http\Controllers\Receptionist\SmartSerialController::class, 'updateEntry'])->name('update-entry');
+        Route::delete('/queue/{queueId}/cancel', [\App\Http\Controllers\Receptionist\SmartSerialController::class, 'cancel'])->name('cancel');
+        Route::get('/queue/{queueId}/print-token', [\App\Http\Controllers\Receptionist\SmartSerialController::class, 'printToken'])->name('print-token');
     });
 
     // Notifications

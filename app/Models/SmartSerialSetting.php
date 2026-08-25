@@ -25,6 +25,13 @@ class SmartSerialSetting extends Model
         'queue_mode',
         'voice_enabled',
         'display_enabled',
+        'tts_provider',
+        'tts_api_key',
+        'tts_voice',
+        'tts_speed',
+        'tts_volume',
+        'tts_language',
+        'tts_fallback_enabled',
     ];
 
     protected $casts = [
@@ -37,9 +44,12 @@ class SmartSerialSetting extends Model
         'emergency_priority' => 'boolean',
         'voice_enabled' => 'boolean',
         'display_enabled' => 'boolean',
+        'tts_fallback_enabled' => 'boolean',
         'starting_serial_number' => 'integer',
         'max_serial' => 'integer',
         'max_queue_size' => 'integer',
+        'tts_speed' => 'decimal:1',
+        'tts_volume' => 'decimal:1',
     ];
 
     public function doctor()

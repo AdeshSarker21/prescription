@@ -42,11 +42,6 @@
                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block mr-1"></span>
                     {{ ucfirst($session->status) }}
                 </span>
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" x-model="voiceEnabled" class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-xs font-medium" style="color:var(--text-muted);">Voice</span>
-                </label>
-                <span x-show="voiceStatus" x-text="voiceStatus" class="text-xs px-2 py-1 rounded-full" style="background:rgba(245,158,11,0.1);color:#d97706;"></span>
                 <a href="{{ route('smart-serial.display.doctor', Auth::id()) }}" target="_blank" class="text-sm font-medium transition-all" style="color:#059669;padding:6px 14px;border-radius:8px;background:rgba(16,185,129,0.08);">&#128250; Patient Display</a>
                 <a href="{{ route('doctor.smart-serial.index') }}" class="text-sm font-medium transition-all" style="color:#6366f1;padding:6px 14px;border-radius:8px;background:rgba(99,102,241,0.08);">Open Queue &rarr;</a>
             </div>
@@ -243,12 +238,12 @@
             @if($currentChamber)
                 <div class="flex items-center gap-2 mb-2">
                     <svg class="w-4 h-4" style="color:#06b6d4;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                    <p class="text-xs" style="color:var(--text-muted);">{{ is_array($currentChamber) ? ($currentChamber['name'] ?? $currentChamber['location'] ?? 'Chamber') : $currentChamber }}</p>
+                    <p class="text-xs" style="color:var(--text-muted);">{{ $currentChamber->name ?? $currentChamber ?? 'Chamber' }}</p>
                 </div>
             @endif
             <div class="flex items-center gap-2">
                 <svg class="w-4 h-4" style="color:#6366f1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
-                <p class="text-xs" style="color:var(--text-muted);">Current: <span class="font-bold" style="color:#6366f1;">#{{ $session ? $session->daily_serial_counter : '—' }}</span> &middot; Next: <span class="font-bold" style="color:#06b6d4;">#{{ $session ? $nextSerial : '—' }}</span></p>
+                <p class="text-xs" style="color:var(--text-muted);">Current: <span class="font-bold" style="color:#6366f1;">{{ $currentCalled ? '#' . $currentCalled->formatted_serial : '—' }}</span> &middot; Next: <span class="font-bold" style="color:#06b6d4;">{{ $nextPatient ? '#' . $nextPatient->formatted_serial : '#' . $nextSerial }}</span></p>
             </div>
         </div>
     </div>
@@ -471,74 +466,19 @@
 <script>
 function serialDashboard() {
     return {
-        voiceEnabled: @json($voiceEnabled),
         queue: @js($queue->values()->toArray()),
         stats: @js($stats),
         permissions: @js($permissions),
         sessionId: @js($session?->id),
         refreshTimer: null,
-        lastCalledId: null,
-        lastPreparingId: null,
-        lastRecalledId: null,
-        announcedIds: new Set(),
-        speechUnlocked: false,
-        pendingAnnouncement: null,
-        voiceStatus: '',
 
         init() {
-            this.loadAnnouncedFromStorage();
-            this.unlockSpeechOnInteraction();
             this.refreshQueue();
             this.refreshTimer = setInterval(() => this.refreshQueue(), 5000);
         },
 
-        loadAnnouncedFromStorage() {
-            try {
-                const stored = localStorage.getItem('smart_serial_announced_' + this.sessionId);
-                if (stored) {
-                    const ids = JSON.parse(stored);
-                    ids.forEach(id => this.announcedIds.add(id));
-                }
-            } catch(e) {}
-        },
-
-        saveAnnouncedToStorage() {
-            try {
-                localStorage.setItem(
-                    'smart_serial_announced_' + this.sessionId,
-                    JSON.stringify([...this.announcedIds])
-                );
-            } catch(e) {}
-        },
-
-        unlockSpeechOnInteraction() {
-            if (this.speechUnlocked) return;
-            const unlock = () => {
-                if (this.speechUnlocked) return;
-                this.speechUnlocked = true;
-                this.voiceStatus = '';
-                document.removeEventListener('click', unlock);
-                document.removeEventListener('keydown', unlock);
-                document.removeEventListener('touchstart', unlock);
-                if (this.pendingAnnouncement) {
-                    const pending = this.pendingAnnouncement;
-                    this.pendingAnnouncement = null;
-                    this.speak(pending.msg, pending.type);
-                }
-            };
-            document.addEventListener('click', unlock);
-            document.addEventListener('keydown', unlock);
-            document.addEventListener('touchstart', unlock);
-        },
-
         hasPermission(perm) {
             return this.permissions.includes(perm);
-        },
-
-        getGenderPrefix(gender) {
-            if (gender === 'male') return 'জনাব';
-            if (gender === 'female') return 'জনাবা';
-            return 'জনাব';
         },
 
         async refreshQueue() {
@@ -549,87 +489,8 @@ function serialDashboard() {
                 if (data.queue) {
                     this.queue = data.queue;
                     this.stats = data.stats;
-
-                    const preparing = data.queue.find(q => q.status === 'preparing');
-                    if (preparing && preparing.id !== this.lastPreparingId) {
-                        this.lastPreparingId = preparing.id;
-                        if (!this.announcedIds.has('preparing_' + preparing.id)) {
-                            this.announcedIds.add('preparing_' + preparing.id);
-                            this.saveAnnouncedToStorage();
-                            const name = preparing.patient?.name || 'Unknown';
-                            this.speak(`এর পরে সিরিয়াল ${name}, আপনি প্রস্তুত থাকুন।`, 'preparing');
-                        }
-                    }
-                    if (!preparing) this.lastPreparingId = null;
-
-                    const called = data.queue.find(q => q.status === 'calling');
-                    if (called && called.id !== this.lastCalledId) {
-                        this.lastCalledId = called.id;
-                        if (!this.announcedIds.has('calling_' + called.id)) {
-                            this.announcedIds.add('calling_' + called.id);
-                            this.saveAnnouncedToStorage();
-                            const name = called.patient?.name || 'Unknown';
-                            const gender = called.patient?.gender || '';
-                            const prefix = this.getGenderPrefix(gender);
-                            if (called.priority === 'emergency') {
-                                this.speak(`জরুরি! ${prefix} ${name}, আপনি এবার ভিতরে প্রবেশ করুন।`, 'emergency');
-                            } else {
-                                this.speak(`${prefix} ${name}, আপনি এবার ভিতরে প্রবেশ করুন।`, 'calling');
-                            }
-                        }
-                    }
-                    if (!called) this.lastCalledId = null;
-
-                    const recalled = data.queue.find(q => q.status === 'calling' && q.notes && q.notes.includes('Recalled'));
-                    if (recalled && recalled.id !== this.lastRecalledId) {
-                        this.lastRecalledId = recalled.id;
-                        const recallKey = 'recall_' + recalled.id + '_' + recalled.updated_at;
-                        if (!this.announcedIds.has(recallKey)) {
-                            this.announcedIds.add(recallKey);
-                            this.saveAnnouncedToStorage();
-                            const name = recalled.patient?.name || 'Unknown';
-                            this.speak(`${name}, আপনার সিরিয়াল আবার ডাকা হচ্ছে।`, 'recall');
-                        }
-                    }
-                    if (!recalled) this.lastRecalledId = null;
                 }
             } catch(e) {}
-        },
-
-        speak(msg, type) {
-            if (!this.voiceEnabled) return;
-            if (!('speechSynthesis' in window)) {
-                this.voiceStatus = 'Speech not supported in this browser.';
-                console.warn('Web Speech API not available');
-                return;
-            }
-            if (!this.speechUnlocked) {
-                this.pendingAnnouncement = { msg, type };
-                this.voiceStatus = 'Click anywhere to enable voice.';
-                return;
-            }
-            this.voiceStatus = '';
-            try {
-                window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(msg);
-                u.lang = 'bn-BD';
-                u.rate = 0.9;
-                u.pitch = 1;
-                u.onerror = (e) => {
-                    console.error('Speech error:', e.error);
-                    if (e.error === 'not-allowed' || e.error === 'canceled') {
-                        this.voiceStatus = 'Voice blocked. Click the page to enable.';
-                        this.speechUnlocked = false;
-                        this.pendingAnnouncement = { msg, type };
-                        this.unlockSpeechOnInteraction();
-                    }
-                };
-                u.onend = () => { this.voiceStatus = ''; };
-                window.speechSynthesis.speak(u);
-            } catch(e) {
-                console.error('Speech failed:', e);
-                this.voiceStatus = 'Voice unavailable.';
-            }
         },
 
         destroy() {

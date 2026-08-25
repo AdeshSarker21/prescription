@@ -346,6 +346,11 @@
                     <span>Reports</span>
                 </x-doctor-nav-link>
 
+                <x-doctor-nav-link href="{{ route('doctor.notices.index') }}" :active="request()->routeIs('doctor.notices.*')">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+                    <span>Notices</span>
+                </x-doctor-nav-link>
+
                 <div class="border-t border-white/30 my-3"></div>
 
                 <x-doctor-nav-link href="{{ route('doctor.sms-center.index') }}" :active="request()->routeIs('doctor.sms-center.*')">
@@ -495,7 +500,7 @@
             <footer class="glass-footer px-6 py-4 print:hidden">
                 <div class="flex flex-col sm:flex-row justify-between items-center text-sm text-gray-500">
                     <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
-                    <p>Doctor Portal v1.0</p>
+                    <p>Design and Develop by: <a href="https://happycoddingit.com" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-medium">Happy Codding IT</a></p>
                 </div>
             </footer>
         </div>

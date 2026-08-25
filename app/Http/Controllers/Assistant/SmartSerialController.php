@@ -177,6 +177,7 @@ class SmartSerialController extends Controller
         if (!$nextPatient) return back()->with('error', 'No patients waiting.');
 
         $nextPatient->transitionTo(PatientQueue::STATUS_CALLING, 'assistant');
+        $session->update(['pending_announcement' => 'preparing', 'pending_queue_id' => $nextPatient->id]);
         return back()->with('success', "Called: {$nextPatient->patient->name} (#{$nextPatient->formatted_serial})");
     }
 
@@ -208,6 +209,7 @@ class SmartSerialController extends Controller
         }
 
         $q->transitionTo(PatientQueue::STATUS_INSIDE, 'assistant');
+        $q->session->update(['pending_announcement' => 'calling', 'pending_queue_id' => $q->id]);
         return back()->with('success', 'Patient entered. Consultation started.');
     }
 
@@ -222,6 +224,7 @@ class SmartSerialController extends Controller
         }
 
         $q->transitionTo(PatientQueue::STATUS_COMPLETED, 'assistant');
+        $q->session->update(['pending_announcement' => 'inside', 'pending_queue_id' => $q->id]);
         return back()->with('success', 'Completed.');
     }
 

@@ -12,6 +12,8 @@ class SerialSession extends Model
     protected $fillable = [
         'doctor_id', 'chamber_id', 'session_date', 'session_label', 'status',
         'current_serial', 'total_patients', 'daily_serial_counter',
+        'pending_announcement', 'pending_queue_id',
+        'pending_voice_text', 'pending_patient_name', 'pending_patient_gender', 'pending_patient_id',
         'started_at', 'closed_at',
     ];
 

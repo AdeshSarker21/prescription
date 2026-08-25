@@ -31,6 +31,13 @@
             <main>
                 @yield('content')
             </main>
+
+            <!-- Footer -->
+            <footer class="bg-white border-t border-gray-200 py-4">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+                    <p>Design and Develop by: <a href="https://happycoddingit.com" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-medium">Happy Codding IT</a></p>
+                </div>
+            </footer>
         </div>
     </body>
 </html>

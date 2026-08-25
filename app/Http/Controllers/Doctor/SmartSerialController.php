@@ -320,8 +320,23 @@ class SmartSerialController extends Controller
         }
         if (!$nextPatient) return back()->with('error', 'No patients waiting.');
 
+        // ─── CAPTURE VOICE CONTEXT BEFORE UPDATE ───
+        $name = $nextPatient->patient->name ?? 'রোগী';
+        $gender = $nextPatient->patient->gender ?? 'male';
+        $prefix = $gender === 'female' ? 'জনাবা' : 'জনাব';
+        $voiceText = "{$prefix} {$name}, আপনি ভিতরে প্রবেশ করুন।";
+
+        $session->update([
+            'pending_announcement' => 'calling',
+            'pending_queue_id' => $nextPatient->id,
+            'pending_voice_text' => $voiceText,
+            'pending_patient_name' => $name,
+            'pending_patient_gender' => $gender,
+            'pending_patient_id' => $nextPatient->patient_id,
+        ]);
+
         $nextPatient->transitionTo(PatientQueue::STATUS_CALLING, 'doctor');
-        return back()->with('success', "Called: {$nextPatient->patient->name} (#{$nextPatient->formatted_serial})");
+        return back()->with('success', "Called: {$name} (#{$nextPatient->formatted_serial})");
     }
 
     public function callPatient(Request $request, $queueId)
@@ -337,8 +352,23 @@ class SmartSerialController extends Controller
             return back()->with('error', 'Patient is not waiting or preparing.');
         }
 
+        // ─── CAPTURE VOICE CONTEXT BEFORE UPDATE ───
+        $name = $q->patient->name ?? 'রোগী';
+        $gender = $q->patient->gender ?? 'male';
+        $prefix = $gender === 'female' ? 'জনাবা' : 'জনাব';
+        $voiceText = "{$prefix} {$name}, আপনি ভিতরে প্রবেশ করুন।";
+
+        $q->session->update([
+            'pending_announcement' => 'calling',
+            'pending_queue_id' => $q->id,
+            'pending_voice_text' => $voiceText,
+            'pending_patient_name' => $name,
+            'pending_patient_gender' => $gender,
+            'pending_patient_id' => $q->patient_id,
+        ]);
+
         $q->transitionTo(PatientQueue::STATUS_CALLING, 'doctor');
-        return back()->with('success', "Called: {$q->patient->name}");
+        return back()->with('success', "Called: {$name}");
     }
 
     public function startConsultation(Request $request, $queueId)
@@ -350,6 +380,21 @@ class SmartSerialController extends Controller
         if ($q->doctor_id !== Auth::id()) {
             return $this->denyAccess($request, 'You do not own this queue entry.');
         }
+
+        // ─── CAPTURE VOICE CONTEXT BEFORE UPDATE ───
+        $name = $q->patient->name ?? 'রোগী';
+        $gender = $q->patient->gender ?? 'male';
+        $prefix = $gender === 'female' ? 'জনাবা' : 'জনাব';
+        $voiceText = "{$prefix} {$name}, আপনি ভিতরে প্রবেশ করুন।";
+
+        $q->session->update([
+            'pending_announcement' => 'calling',
+            'pending_queue_id' => $q->id,
+            'pending_voice_text' => $voiceText,
+            'pending_patient_name' => $name,
+            'pending_patient_gender' => $gender,
+            'pending_patient_id' => $q->patient_id,
+        ]);
 
         $q->transitionTo(PatientQueue::STATUS_INSIDE, 'doctor');
         return back()->with('success', 'Patient entered. Consultation started.');
@@ -365,20 +410,82 @@ class SmartSerialController extends Controller
             return $this->denyAccess($request, 'You do not own this queue entry.');
         }
 
+        // ─── CAPTURE EVERYTHING BEFORE QUEUE UPDATE ───
+        $patientName = $q->patient->name ?? 'রোগী';
+        $patientGender = $q->patient->gender ?? 'male';
+        $patientId = $q->patient_id;
+        $queueId = $q->id;
+        $serialId = $q->serial_session_id;
+        $formattedSerial = $q->formatted_serial;
+        $session = $q->session;
+        $prefix = $patientGender === 'female' ? 'জনাবা' : 'জনাব';
+        $voiceText = "{$prefix} {$patientName}, ধন্যবাদ।";
+
+        // ─── STORE VOICE CONTEXT IN SESSION (before queue status changes) ───
+        $session->update([
+            'pending_announcement' => 'completed',
+            'pending_queue_id' => $queueId,
+            'pending_voice_text' => $voiceText,
+            'pending_patient_name' => $patientName,
+            'pending_patient_gender' => $patientGender,
+            'pending_patient_id' => $patientId,
+        ]);
+
+        // ─── NOW UPDATE QUEUE STATUS ───
         $q->transitionTo(PatientQueue::STATUS_COMPLETED, 'doctor');
+
+        // Log announcement in history
+        \App\Models\SmartSerialAnnouncementHistory::create([
+            'serial_session_id' => $serialId,
+            'patient_queue_id' => $queueId,
+            'patient_id' => $patientId,
+            'announcement_type' => 'completed',
+            'text_spoken' => $voiceText,
+            'tts_provider_used' => 'dashboard_voice',
+            'success' => true,
+            'announced_at' => now(),
+        ]);
 
         $settings = SmartSerialSetting::where('doctor_id', Auth::id())->first();
         if ($settings && $settings->auto_call_next) {
-            $session = $q->session;
-            if ($session && $session->status === 'active') {
+            if ($session->status === 'active') {
                 $nextPatient = null;
                 foreach (['emergency', 'urgent', 'vip', 'normal'] as $p) {
                     $nextPatient = $session->patientQueues()->where('status', 'waiting')->where('priority', $p)->orderBy('serial_number')->first();
                     if ($nextPatient) break;
                 }
                 if ($nextPatient) {
+                    // ─── CAPTURE NEXT PATIENT CONTEXT BEFORE UPDATE ───
+                    $nextName = $nextPatient->patient->name ?? 'রোগী';
+                    $nextGender = $nextPatient->patient->gender ?? 'male';
+                    $nextPrefix = $nextGender === 'female' ? 'জনাবা' : 'জনাব';
+                    $nextVoiceText = "{$nextPrefix} {$nextName}, আপনি ভিতরে প্রবেশ করুন।";
+
+                    // ─── STORE NEXT PATIENT VOICE CONTEXT ───
+                    $session->update([
+                        'pending_announcement' => 'calling',
+                        'pending_queue_id' => $nextPatient->id,
+                        'pending_voice_text' => $nextVoiceText,
+                        'pending_patient_name' => $nextName,
+                        'pending_patient_gender' => $nextGender,
+                        'pending_patient_id' => $nextPatient->patient_id,
+                    ]);
+
+                    // ─── NOW UPDATE NEXT PATIENT QUEUE STATUS ───
                     $nextPatient->transitionTo(PatientQueue::STATUS_CALLING, 'system', 'Auto-called after completion');
-                    return back()->with('success', 'Completed. Auto-called: ' . $nextPatient->patient->name);
+
+                    \App\Models\SmartSerialAnnouncementHistory::create([
+                        'serial_session_id' => $session->id,
+                        'patient_queue_id' => $nextPatient->id,
+                        'patient_id' => $nextPatient->patient_id,
+                        'announcement_type' => 'calling',
+                        'text_spoken' => $nextVoiceText,
+                        'tts_provider_used' => 'dashboard_voice',
+                        'success' => true,
+                        'announced_at' => now(),
+                    ]);
+
+                    return back()->with('success', 'Completed. Auto-called: ' . $nextName);
                 }
             }
         }
@@ -500,16 +607,72 @@ class SmartSerialController extends Controller
             return $this->denyAccess($request, 'You do not own this queue entry.');
         }
 
+        // ─── CAPTURE EVERYTHING BEFORE QUEUE UPDATE ───
+        $patientName = $q->patient->name ?? 'রোগী';
+        $patientGender = $q->patient->gender ?? 'male';
+        $patientId = $q->patient_id;
+        $queueRecordId = $q->id;
+        $serialId = $q->serial_session_id;
+        $session = $q->session;
+        $prefix = $patientGender === 'female' ? 'জনাবা' : 'জনাব';
+        $voiceText = "{$prefix} {$patientName}, আপনার সিরিয়াল আবার ডাকা হচ্ছে।";
+
         if ($q->status === PatientQueue::STATUS_COMPLETED) {
+            // ─── STORE VOICE CONTEXT BEFORE QUEUE UPDATE ───
+            $session->update([
+                'pending_announcement' => 'recall',
+                'pending_queue_id' => $queueRecordId,
+                'pending_voice_text' => $voiceText,
+                'pending_patient_name' => $patientName,
+                'pending_patient_gender' => $patientGender,
+                'pending_patient_id' => $patientId,
+            ]);
+
+            // ─── NOW UPDATE QUEUE STATUS ───
             $q->update(['notes' => ($q->notes ? $q->notes . ' | ' : '') . 'Recalled']);
             $q->transitionTo(PatientQueue::STATUS_CALLING, 'doctor', 'Recalled after completion');
-            return back()->with('success', "Recalled: {$q->patient->name}");
+
+            \App\Models\SmartSerialAnnouncementHistory::create([
+                'serial_session_id' => $serialId,
+                'patient_queue_id' => $queueRecordId,
+                'patient_id' => $patientId,
+                'announcement_type' => 'recall',
+                'text_spoken' => $voiceText,
+                'tts_provider_used' => 'dashboard_voice',
+                'success' => true,
+                'announced_at' => now(),
+            ]);
+
+            return back()->with('success', "Recalled: {$patientName}");
         }
 
         if ($q->status === PatientQueue::STATUS_CALLING) {
+            // ─── STORE VOICE CONTEXT BEFORE QUEUE UPDATE ───
+            $session->update([
+                'pending_announcement' => 'recall',
+                'pending_queue_id' => $queueRecordId,
+                'pending_voice_text' => $voiceText,
+                'pending_patient_name' => $patientName,
+                'pending_patient_gender' => $patientGender,
+                'pending_patient_id' => $patientId,
+            ]);
+
+            // ─── NOW UPDATE QUEUE STATUS ───
             $q->update(['notes' => ($q->notes ? $q->notes . ' | ' : '') . 'Recalled']);
             $q->logStatusChange(PatientQueue::STATUS_CALLING, 'doctor', 'Recalled (re-announced)');
-            return back()->with('success', "Recalled: {$q->patient->name}");
+
+            \App\Models\SmartSerialAnnouncementHistory::create([
+                'serial_session_id' => $serialId,
+                'patient_queue_id' => $queueRecordId,
+                'patient_id' => $patientId,
+                'announcement_type' => 'recall',
+                'text_spoken' => $voiceText,
+                'tts_provider_used' => 'dashboard_voice',
+                'success' => true,
+                'announced_at' => now(),
+            ]);
+
+            return back()->with('success', "Recalled: {$patientName}");
         }
 
         return back()->with('error', 'Patient cannot be recalled from current status.');
@@ -659,11 +822,43 @@ class SmartSerialController extends Controller
 
         $doctor = $session->doctor;
 
+        // ─── READ VOICE CONTEXT DIRECTLY FROM SESSION ───
+        // No queue lookup needed — controller stored everything before queue update
+        $pendingAnnouncement = $session->pending_announcement;
+        $pendingQueueId = $session->pending_queue_id;
+        $pendingPatientName = $session->pending_patient_name;
+        $pendingPatientGender = $session->pending_patient_gender;
+        $pendingVoiceText = $session->pending_voice_text;
+        $pendingPatientId = $session->pending_patient_id;
+
+        // Clear after reading (one-shot)
+        if ($pendingAnnouncement) {
+            $session->update([
+                'pending_announcement' => null,
+                'pending_queue_id' => null,
+                'pending_voice_text' => null,
+                'pending_patient_name' => null,
+                'pending_patient_gender' => null,
+                'pending_patient_id' => null,
+            ]);
+        }
+
         return response()->json([
             'session_status' => $session->status,
             'queue' => $queue,
             'current_called' => $currentCalled,
             'next_in_queue' => $nextInQueue,
+            'pending_announcement' => $pendingAnnouncement,
+            'pending_queue_id' => $pendingQueueId,
+            'pending_patient_name' => $pendingPatientName,
+            'pending_patient_gender' => $pendingPatientGender,
+            'pending_voice_text' => $pendingVoiceText,
+            'pending_patient_id' => $pendingPatientId,
+            'notices' => \App\Models\Notice::forDoctor($session->doctor_id)
+                ->active()
+                ->latest()
+                ->get()
+                ->map(fn($n) => ['id' => $n->id, 'title' => $n->title, 'message' => $n->message]),
             'doctor' => [
                 'name' => $doctor->name ?? 'Doctor',
                 'name_bn' => $doctor->name_bn ?? '',

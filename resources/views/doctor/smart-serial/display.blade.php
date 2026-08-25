@@ -45,89 +45,90 @@
 
         /* ===== LEFT PANEL - Doctor Profile ===== */
         .left-panel {
-            width: 340px;
-            min-width: 300px;
+            width: 380px;
+            min-width: 340px;
             background: var(--bg-panel);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 30px 24px;
+            padding: 36px 28px;
             overflow-y: auto;
         }
         .doctor-avatar {
-            width: 140px;
-            height: 140px;
+            width: 160px;
+            height: 160px;
             border-radius: 50%;
             object-fit: cover;
             border: 4px solid rgba(99,102,241,0.4);
             box-shadow: 0 0 30px rgba(99,102,241,0.2);
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1));
         }
         .doctor-name {
-            font-size: 1.4rem;
+            font-size: 1.6rem;
             font-weight: 700;
             color: var(--text-primary);
             text-align: center;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
         .doctor-name-bn {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 600;
             color: #c4b5fd;
             text-align: center;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
         .doctor-designation {
-            font-size: 0.85rem;
+            font-size: 1rem;
             color: var(--text-secondary);
             text-align: center;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .doctor-qualification {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: var(--text-muted);
             text-align: center;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             line-height: 1.4;
         }
         .doctor-specialization {
             display: inline-block;
             background: rgba(99,102,241,0.15);
             color: #818cf8;
-            padding: 5px 14px;
+            padding: 6px 18px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.95rem;
             font-weight: 600;
-            margin-top: 10px;
+            margin-top: 12px;
             text-align: center;
         }
         .doctor-chamber {
-            margin-top: 16px;
-            font-size: 0.8rem;
+            margin-top: 18px;
+            font-size: 0.95rem;
             color: var(--text-muted);
             text-align: center;
         }
         .doctor-chamber .label {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--text-muted);
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .sub-specialties {
-            margin-top: 12px;
+            margin-top: 14px;
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 8px;
             justify-content: center;
         }
         .sub-specialties span {
             background: rgba(139,92,246,0.1);
             color: #a78bfa;
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 12px;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
         }
 
         /* Emergency Banner */
@@ -136,8 +137,8 @@
             background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(220,38,38,0.1));
             border: 1px solid rgba(239,68,68,0.4);
             border-radius: 12px;
-            padding: 16px;
-            margin-top: 20px;
+            padding: 18px;
+            margin-top: 22px;
             text-align: center;
             animation: emergency-flash 1.5s ease-in-out infinite;
         }
@@ -145,22 +146,22 @@
             0%, 100% { border-color: rgba(239,68,68,0.4); box-shadow: 0 0 0 rgba(239,68,68,0); }
             50% { border-color: rgba(239,68,68,0.8); box-shadow: 0 0 20px rgba(239,68,68,0.2); }
         }
-        .emergency-banner .icon { font-size: 1.6rem; margin-bottom: 4px; }
+        .emergency-banner .icon { font-size: 1.8rem; margin-bottom: 6px; }
         .emergency-banner .title {
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-weight: 700;
             color: #fca5a5;
             text-transform: uppercase;
             letter-spacing: 2px;
         }
         .emergency-banner .patient-name {
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: #fff;
-            margin-top: 6px;
+            margin-top: 8px;
         }
         .emergency-banner .serial {
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             font-weight: 800;
             color: #f87171;
         }
@@ -178,35 +179,35 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 14px 24px;
+            padding: 16px 28px;
             background: var(--bg-panel);
             border-bottom: 1px solid var(--border);
         }
         .top-bar .title {
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: var(--text-primary);
         }
         .top-bar .clock {
-            font-size: 1.6rem;
+            font-size: 1.8rem;
             font-weight: 700;
             color: #818cf8;
             font-variant-numeric: tabular-nums;
         }
         .top-bar .date {
-            font-size: 0.8rem;
+            font-size: 0.95rem;
             color: var(--text-muted);
         }
         .top-bar .live-badge {
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 0.75rem;
+            gap: 8px;
+            font-size: 0.85rem;
             color: var(--green-bright);
             font-weight: 600;
         }
         .top-bar .live-dot {
-            width: 8px; height: 8px;
+            width: 10px; height: 10px;
             border-radius: 50%;
             background: var(--green-bright);
             animation: pulse-dot 2s infinite;
@@ -220,32 +221,32 @@
         .calling-banner {
             background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(22,163,74,0.08));
             border-bottom: 2px solid rgba(34,197,94,0.3);
-            padding: 20px 24px;
+            padding: 24px 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 30px;
+            gap: 36px;
         }
         .calling-banner .label {
-            font-size: 0.8rem;
+            font-size: 1rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 3px;
             color: var(--green-bright);
         }
         .calling-banner .serial-num {
-            font-size: 2.6rem;
+            font-size: 3.2rem;
             font-weight: 900;
             color: var(--green-bright);
             text-shadow: 0 0 20px rgba(34,197,94,0.3);
         }
         .calling-banner .patient-name {
-            font-size: 1.8rem;
+            font-size: 2.2rem;
             font-weight: 700;
             color: #fff;
         }
         .calling-banner .prompt {
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             color: var(--yellow);
             animation: blink 1.5s ease-in-out infinite;
         }
@@ -256,25 +257,25 @@
         .no-calling-banner {
             background: rgba(30,41,59,0.5);
             border-bottom: 1px solid var(--border);
-            padding: 16px 24px;
+            padding: 18px 28px;
             text-align: center;
             color: var(--text-muted);
-            font-size: 0.95rem;
+            font-size: 1.1rem;
         }
 
         /* Queue Table */
         .queue-area {
             flex: 1;
             overflow-y: auto;
-            padding: 0 24px 16px;
+            padding: 0 28px 18px;
         }
         .queue-table {
             width: 100%;
             border-collapse: collapse;
         }
         .queue-table thead th {
-            padding: 12px 14px;
-            font-size: 0.7rem;
+            padding: 14px 16px;
+            font-size: 0.85rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1.5px;
@@ -290,10 +291,52 @@
             border-bottom: 1px solid var(--border);
             transition: all 0.3s ease;
         }
+
+        /* ===== RUNNING ROW ANIMATION ===== */
         .queue-table tbody tr.row-calling {
-            background: linear-gradient(90deg, rgba(34,197,94,0.2), rgba(34,197,94,0.08));
-            border-left: 4px solid var(--green-bright);
+            background: linear-gradient(90deg, rgba(34,197,94,0.25), rgba(34,197,94,0.08));
+            border-left: 5px solid var(--green-bright);
+            animation: running-glow 2s ease-in-out infinite;
+            position: relative;
         }
+        .queue-table tbody tr.row-calling td {
+            padding-top: 18px;
+            padding-bottom: 18px;
+        }
+        @keyframes running-glow {
+            0%, 100% {
+                background: linear-gradient(90deg, rgba(34,197,94,0.25), rgba(34,197,94,0.08));
+                box-shadow: inset 0 0 30px rgba(34,197,94,0.05);
+            }
+            50% {
+                background: linear-gradient(90deg, rgba(34,197,94,0.35), rgba(34,197,94,0.15));
+                box-shadow: inset 0 0 40px rgba(34,197,94,0.1);
+            }
+        }
+        .queue-table tbody tr.row-calling .col-serial {
+            color: var(--green-bright);
+            text-shadow: 0 0 10px rgba(34,197,94,0.3);
+        }
+        .queue-table tbody tr.row-calling .col-name {
+            color: #fff;
+            font-weight: 700;
+        }
+        .running-pulse {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--green-bright);
+            margin-right: 8px;
+            animation: pulse-ring 1.5s ease-out infinite;
+            vertical-align: middle;
+        }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+            70% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+            100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+        }
+
         .queue-table tbody tr.row-next {
             background: linear-gradient(90deg, rgba(21,128,61,0.2), rgba(21,128,61,0.08));
             border-left: 4px solid var(--green-dark);
@@ -303,38 +346,47 @@
             border-left: 4px solid var(--red);
         }
         .queue-table tbody td {
-            padding: 14px 14px;
-            font-size: 0.95rem;
+            padding: 16px 16px;
+            font-size: 1.15rem;
             vertical-align: middle;
         }
         .queue-table .col-serial {
             font-weight: 800;
-            font-size: 1.1rem;
+            font-size: 1.4rem;
             color: var(--text-primary);
-            width: 100px;
+            width: 120px;
         }
         .queue-table .col-name {
             font-weight: 600;
+            font-size: 1.2rem;
             color: var(--text-primary);
         }
         .queue-table .col-status {
-            width: 120px;
+            width: 140px;
         }
         .queue-table .col-wait {
-            width: 110px;
+            width: 130px;
             color: var(--text-muted);
-            font-size: 0.85rem;
+            font-size: 1rem;
         }
         .status-badge {
             display: inline-block;
-            padding: 4px 12px;
+            padding: 5px 14px;
             border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .status-badge.running { background: var(--green-bg); color: var(--green-bright); }
+        .status-badge.running {
+            background: var(--green-bg);
+            color: var(--green-bright);
+            animation: badge-pulse 2s ease-in-out infinite;
+        }
+        @keyframes badge-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
         .status-badge.next { background: rgba(21,128,61,0.15); color: #4ade80; }
         .status-badge.waiting { background: rgba(148,163,184,0.1); color: var(--text-secondary); }
         .status-badge.emergency-badge { background: var(--red-bg); color: #fca5a5; }
@@ -343,21 +395,21 @@
         .emergency-tag {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
             background: var(--red-bg);
             color: #fca5a5;
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 8px;
-            font-size: 0.65rem;
+            font-size: 0.75rem;
             font-weight: 700;
-            margin-left: 8px;
+            margin-left: 10px;
         }
 
         /* ===== BOTTOM TICKER ===== */
         .ticker-bar {
             background: linear-gradient(90deg, #1e293b, #0f172a);
             border-top: 1px solid var(--border);
-            padding: 10px 0;
+            padding: 12px 0;
             overflow: hidden;
             white-space: nowrap;
             position: relative;
@@ -365,7 +417,7 @@
         .ticker-content {
             display: inline-block;
             animation: ticker-scroll 30s linear infinite;
-            font-size: 0.85rem;
+            font-size: 1rem;
             color: var(--text-secondary);
             padding-left: 100%;
         }
@@ -393,7 +445,7 @@
             gap: 8px;
         }
         .voice-bar .status-dot {
-            width: 6px; height: 6px;
+            width: 8px; height: 8px;
             border-radius: 50%;
             background: var(--text-muted);
         }
@@ -402,15 +454,15 @@
             background: rgba(99,102,241,0.9);
             color: white;
             border: none;
-            padding: 6px 16px;
-            border-radius: 6px;
-            font-size: 0.75rem;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
         }
         .voice-bar .enable-btn:hover { background: rgba(99,102,241,1); }
         .voice-bar .label {
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
         }
 
@@ -421,8 +473,8 @@
             justify-content: center;
             flex-direction: column;
         }
-        .session-ended h2 { font-size: 2rem; color: var(--red); margin-bottom: 12px; }
-        .session-ended p { color: var(--text-muted); font-size: 1.1rem; }
+        .session-ended h2 { font-size: 2.2rem; color: var(--red); margin-bottom: 14px; }
+        .session-ended p { color: var(--text-muted); font-size: 1.2rem; }
 
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
@@ -433,12 +485,21 @@
 <body x-data="patientDisplay()" x-init="init()">
 
     {{-- Controls --}}
-    <div class="voice-bar">
+    <div class="voice-bar" style="flex-wrap:wrap;gap:6px;">
         <button class="enable-btn" @click="toggleFullscreen()" x-text="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'" style="background:rgba(16,185,129,0.9);"></button>
         <div class="status-dot" :class="{ 'active': speechReady }"></div>
         <span class="label" x-text="voiceStatusText"></span>
         <template x-if="!speechReady">
-            <button class="enable-btn" @click="unlockSpeech()">Enable Voice</button>
+            <button class="enable-btn" @click="enableVoice()">Enable Voice</button>
+        </template>
+        <template x-if="speechReady">
+            <div style="display:flex;gap:4px;align-items:center;">
+                <input type="text" x-model="testPatientName" placeholder="নাসরিন সুলতানা"
+                       style="width:180px;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:13px;"
+                       @keydown.enter="testPatientNameVoice()">
+                <button class="enable-btn" @click="testPatientNameVoice()" style="background:rgba(139,92,246,0.9);font-size:12px;">&#128266; Test</button>
+                <button class="enable-btn" @click="logDiagnostics()" style="background:rgba(100,116,139,0.7);font-size:12px;">&#128269; Debug</button>
+            </div>
         </template>
     </div>
 
@@ -455,7 +516,10 @@
 
             {{-- ===== LEFT PANEL: Doctor Profile ===== --}}
             <div class="left-panel">
-                <img class="doctor-avatar" :src="doctorData.avatar" :alt="doctorData.name" onerror="this.src='https://ui-avatars.com/api/?name=Doctor&color=7c3aed&background=ede9fe&size=280'">
+                <img class="doctor-avatar"
+                     :src="doctorData.avatar || 'https://ui-avatars.com/api/?name=Doctor&color=7c3aed&background=ede9fe&size=320'"
+                     :alt="doctorData.name"
+                     onerror="this.src='https://ui-avatars.com/api/?name=Doctor&color=7c3aed&background=ede9fe&size=320'">
                 <div class="doctor-name" x-text="doctorData.name"></div>
                 <div class="doctor-name-bn" x-show="doctorData.name_bn" x-text="doctorData.name_bn"></div>
                 <div class="doctor-designation" x-show="doctorData.designation_title" x-text="doctorData.designation_title"></div>
@@ -530,6 +594,9 @@
                                     'row-emergency': item.priority === 'emergency'
                                 }">
                                     <td class="col-serial">
+                                        <template x-if="item.status === 'calling'">
+                                            <span class="running-pulse"></span>
+                                        </template>
                                         <span x-text="'#' + (item.formatted_serial || String(item.serial_number).padStart(3, '0'))"></span>
                                         <template x-if="item.priority === 'emergency'">
                                             <span class="emergency-tag">&#128680; EMERGENCY</span>
@@ -558,7 +625,7 @@
                             </template>
                             <template x-if="queue.length === 0">
                                 <tr>
-                                    <td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted);">কোনো রোগী নেই</td>
+                                    <td colspan="4" style="text-align:center;padding:50px;color:var(--text-muted);font-size:1.2rem;">কোনো রোগী নেই</td>
                                 </tr>
                             </template>
                         </tbody>
@@ -567,19 +634,31 @@
 
                 {{-- Ticker --}}
                 <div class="ticker-bar">
-                    <div class="ticker-content">
-                        <span class="highlight">সিরিয়াল: {{ $settings->prefix ?? '' }}</span>
-                        <span class="separator">|</span>
-                        <span>দয়া করে আপনার পালার অপেক্ষা করুন</span>
-                        <span class="separator">|</span>
-                        <span class="highlight">সিরিয়াল: {{ $settings->prefix ?? '' }}</span>
-                        <span class="separator">|</span>
-                        <span>অনুগ্রহ করে ডাক্তারের পরামর্শ অনুসরণ করুন</span>
-                        <span class="separator">|</span>
-                        <span class="highlight">সিরিয়াল: {{ $settings->prefix ?? '' }}</span>
-                        <span class="separator">|</span>
-                        <span>জরুরি রোগীদের অগ্রাধিকার দেওয়া হবে</span>
-                        <span class="separator">|</span>
+                    <div class="ticker-content" x-data>
+                        <template x-if="notices.length > 0">
+                            <span>
+                                <template x-for="(notice, idx) in notices" :key="notice.id">
+                                    <span>
+                                        <span class="highlight" x-text="notice.title"></span>
+                                        <span> — </span>
+                                        <span x-text="notice.message"></span>
+                                        <span class="separator">|</span>
+                                    </span>
+                                </template>
+                            </span>
+                        </template>
+                        <template x-if="notices.length === 0">
+                            <span>
+                                <span class="highlight">সিরিয়াল: {{ $settings->prefix ?? '' }}</span>
+                                <span class="separator">|</span>
+                                <span>দয়া করে আপনার পালার অপেক্ষা করুন</span>
+                                <span class="separator">|</span>
+                                <span class="highlight">সিরিয়াল: {{ $settings->prefix ?? '' }}</span>
+                                <span class="separator">|</span>
+                                <span>অনুগ্রহ করে ডাক্তারের পরামর্শ অনুসরণ করুন</span>
+                                <span class="separator">|</span>
+                            </span>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -590,6 +669,7 @@
     function patientDisplay() {
         return {
             sessionId: @js($session->id),
+            doctorId: @js($doctor->id),
             queue: @js($queue->values()->toArray()),
             currentCalled: @js($currentCalled),
             nextInQueue: @js($nextInQueue),
@@ -614,17 +694,18 @@
             clockTimer: null,
             currentTime: '',
             currentDate: '',
-            announcedIds: new Set(),
-            lastRecalledId: null,
             emergencyPatient: null,
             speechReady: false,
-            voiceError: false,
             voiceStatusText: 'Click "Enable Voice"',
-            pendingUtterance: null,
             isFullscreen: false,
+            testPatientName: 'নাসরিন সুলতানা',
+            ttsQueue: [],
+            ttsPlaying: false,
+            ttsCache: {},
+            lastPendingKey: null,
+            notices: @js(\App\Models\Notice::forDoctor($doctor->id)->active()->latest()->get()->map(fn($n) => ['id' => $n->id, 'title' => $n->title, 'message' => $n->message])->values()->toArray()),
 
             init() {
-                this.loadAnnouncedFromStorage();
                 this.updateClock();
                 this.clockTimer = setInterval(() => this.updateClock(), 1000);
                 this.refreshQueue();
@@ -632,6 +713,12 @@
                 document.addEventListener('fullscreenchange', () => {
                     this.isFullscreen = !!document.fullscreenElement;
                 });
+                this.enableVoice();
+            },
+
+            enableVoice() {
+                this.speechReady = true;
+                this.voiceStatusText = 'Voice Active — Server TTS';
             },
 
             toggleFullscreen() {
@@ -648,25 +735,6 @@
                 this.currentDate = now.toLocaleDateString('bn-BD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             },
 
-            loadAnnouncedFromStorage() {
-                try {
-                    const stored = localStorage.getItem('display_announced_' + this.sessionId);
-                    if (stored) JSON.parse(stored).forEach(id => this.announcedIds.add(id));
-                } catch(e) {}
-            },
-
-            saveAnnouncedToStorage() {
-                try {
-                    localStorage.setItem('display_announced_' + this.sessionId, JSON.stringify([...this.announcedIds]));
-                } catch(e) {}
-            },
-
-            getGenderPrefix(gender) {
-                if (gender === 'male') return 'জনাব';
-                if (gender === 'female') return 'জনাবা';
-                return 'জনাব';
-            },
-
             getWaitingTime(item) {
                 const statusTime = item.called_at || item.prepared_at || item.created_at;
                 if (!statusTime) return '';
@@ -677,60 +745,106 @@
                 return `${s} সেকেন্ড`;
             },
 
-            unlockSpeech() {
-                if (!('speechSynthesis' in window)) {
-                    this.voiceError = true;
-                    this.voiceStatusText = 'Speech not supported';
+            buildText(type, patientName, gender) {
+                const prefix = gender === 'female' ? 'জনাবা' : 'জনাব';
+                const name = patientName || 'রোগী';
+                const messages = {
+                    preparing: `পরবর্তী সিরিয়ালের জন্য প্রস্তুত থাকুন, ${prefix} ${name}।`,
+                    calling: `${prefix} ${name}, আপনি এবার ভিতরে প্রবেশ করুন।`,
+                    inside: `${prefix} ${name}, ধন্যবাদ।`,
+                    completed: `${prefix} ${name}, ধন্যবাদ।`,
+                    recall: `${prefix} ${name}, আপনার সিরিয়াল আবার ডাকা হচ্ছে।`,
+                    emergency: `জরুরি! ${prefix} ${name}, আপনাকে জরুরি ভিতরে প্রবেশ করুন।`,
+                };
+                return messages[type] || messages.calling;
+            },
+
+            async playTtsAudio(text, type, queueId) {
+                const cacheKey = `${type}_${text}`;
+                if (this.ttsCache[cacheKey]) {
+                    this.playAudioFromUrl(this.ttsCache[cacheKey]);
                     return;
                 }
+
                 try {
-                    const test = new SpeechSynthesisUtterance('');
-                    test.lang = 'bn-BD';
-                    test.volume = 0;
-                    test.onend = () => {
-                        this.speechReady = true;
-                        this.voiceError = false;
-                        this.voiceStatusText = 'Voice Active';
-                        if (this.pendingUtterance) {
-                            this.speak(this.pendingUtterance);
-                            this.pendingUtterance = null;
-                        }
-                    };
-                    test.onerror = () => {
-                        this.speechReady = true;
-                        this.voiceError = false;
-                        this.voiceStatusText = 'Voice Active';
-                    };
-                    window.speechSynthesis.speak(test);
-                    this.speechReady = true;
-                    this.voiceError = false;
-                    this.voiceStatusText = 'Voice Active';
-                } catch(e) {
-                    this.voiceError = true;
-                    this.voiceStatusText = 'Voice Failed';
+                    this.voiceStatusText = 'Generating audio...';
+                    const response = await fetch('{{ route("smart-serial.tts.generate") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            queue_id: queueId,
+                            type: type,
+                        }),
+                    });
+
+                    const result = await response.json();
+                    if (result.success && result.audio_url) {
+                        this.ttsCache[cacheKey] = result.audio_url;
+                        this.voiceStatusText = `Voice Active — ${result.provider}`;
+                        this.playAudioFromUrl(result.audio_url);
+                    } else {
+                        this.voiceStatusText = 'TTS Failed — ' + (result.message || 'Unavailable');
+                    }
+                } catch (e) {
+                    this.voiceStatusText = 'TTS Network Error';
                 }
             },
 
-            speak(msg) {
-                if (!this.speechReady || !msg) {
-                    this.pendingUtterance = msg;
+            playAudioFromUrl(url) {
+                const audio = new Audio(url);
+                audio.onended = () => {
+                    this.ttsPlaying = false;
+                    this.processTtsQueue();
+                };
+                audio.onerror = () => {
+                    this.ttsPlaying = false;
+                    this.processTtsQueue();
+                };
+                this.ttsQueue.push(audio);
+                if (!this.ttsPlaying) {
+                    this.processTtsQueue();
+                }
+            },
+
+            processTtsQueue() {
+                if (this.ttsPlaying || this.ttsQueue.length === 0) return;
+                this.ttsPlaying = true;
+                const audio = this.ttsQueue.shift();
+                audio.play().catch(() => {
+                    this.ttsPlaying = false;
+                    this.processTtsQueue();
+                });
+            },
+
+            testPatientNameVoice() {
+                const name = this.testPatientName.trim() || 'নাসরিন সুলতানা';
+                const gender = 'female';
+                const fullText = this.buildText('calling', name, gender);
+                this.voiceStatusText = `Testing: ${name}...`;
+
+                const testQueueId = this.currentCalled?.id;
+                if (!testQueueId) {
+                    this.voiceStatusText = 'No running patient to test with';
                     return;
                 }
-                try {
-                    window.speechSynthesis.cancel();
-                    const u = new SpeechSynthesisUtterance(msg);
-                    u.lang = 'bn-BD';
-                    u.rate = 0.9;
-                    u.pitch = 1;
-                    u.onerror = (e) => {
-                        if (e.error === 'not-allowed') {
-                            this.speechReady = false;
-                            this.voiceStatusText = 'Voice blocked. Click Enable.';
-                            this.pendingUtterance = msg;
-                        }
-                    };
-                    window.speechSynthesis.speak(u);
-                } catch(e) {}
+
+                this.playTtsAudio(fullText, 'calling', testQueueId);
+            },
+
+            logDiagnostics() {
+                console.log('[TTS] === DIAGNOSTICS ===');
+                console.log('Voice Ready:', this.speechReady);
+                console.log('TTS Playing:', this.ttsPlaying);
+                console.log('TTS Queue:', this.ttsQueue.length);
+                console.log('Cache Entries:', Object.keys(this.ttsCache).length);
+                console.log('Doctor ID:', this.doctorId);
+                console.log('Session ID:', this.sessionId);
+                console.log('[TTS] === END DIAGNOSTICS ===');
+                this.voiceStatusText = `Diagnostics: ${Object.keys(this.ttsCache).length} cached, ${this.ttsQueue.length} queued`;
             },
 
             async refreshQueue() {
@@ -756,6 +870,7 @@
                     this.queue = data.queue || [];
                     this.currentCalled = data.current_called;
                     this.nextInQueue = data.next_in_queue;
+                    if (data.notices) this.notices = data.notices;
 
                     if (data.doctor) {
                         this.doctorData = data.doctor;
@@ -763,41 +878,15 @@
 
                     this.emergencyPatient = this.queue.find(q => q.priority === 'emergency' && q.status === 'calling');
 
-                    if (this.currentCalled) {
-                        const calledId = this.currentCalled.id;
-                        const announceKey = 'calling_' + calledId;
-                        if (!this.announcedIds.has(announceKey)) {
-                            this.announcedIds.add(announceKey);
-                            this.saveAnnouncedToStorage();
-                            const name = this.currentCalled.patient?.name || 'Patient';
-                            const gender = this.currentCalled.patient?.gender || '';
-                            const prefix = this.getGenderPrefix(gender);
-                            if (this.currentCalled.priority === 'emergency') {
-                                this.speak(`জরুরি! ${prefix} ${name}, আপনি এবার ভিতরে প্রবেশ করুন।`);
-                            } else {
-                                this.speak(`${prefix} ${name}, আপনি এবার ভিতরে প্রবেশ করুন।`);
-                            }
-                        }
-
-                        if (this.currentCalled.notes && this.currentCalled.notes.includes('Recalled')) {
-                            const recallKey = 'recall_' + calledId + '_' + this.currentCalled.updated_at;
-                            if (!this.announcedIds.has(recallKey)) {
-                                this.announcedIds.add(recallKey);
-                                this.saveAnnouncedToStorage();
-                                const name = this.currentCalled.patient?.name || 'Patient';
-                                this.speak(`${name}, আপনার সিরিয়াল আবার ডাকা হচ্ছে।`);
-                            }
-                        }
-                    }
-
-                    const preparing = this.queue.find(q => q.status === 'preparing');
-                    if (preparing) {
-                        const prepKey = 'preparing_' + preparing.id;
-                        if (!this.announcedIds.has(prepKey)) {
-                            this.announcedIds.add(prepKey);
-                            this.saveAnnouncedToStorage();
-                            const name = preparing.patient?.name || 'Patient';
-                            this.speak(`এর পরে সিরিয়াল ${name}, আপনি প্রস্তুত থাকুন।`);
+                    // Voice: ONLY play when pending_announcement is set by controller
+                    // Uses pending_voice_text, pending_queue_id, pending_patient_id from controller
+                    // Never builds voice text client-side — backend owns the patient context
+                    if (data.pending_announcement && data.pending_queue_id && data.pending_voice_text) {
+                        const pendingKey = `${data.pending_announcement}_${data.pending_queue_id}_${data.pending_patient_id}`;
+                        // Prevent duplicate: same announcement+queue_id+patient_id combo
+                        if (pendingKey !== this.lastPendingKey) {
+                            this.lastPendingKey = pendingKey;
+                            this.playTtsAudio(data.pending_voice_text, data.pending_announcement, data.pending_queue_id);
                         }
                     }
                 } catch(e) {}
