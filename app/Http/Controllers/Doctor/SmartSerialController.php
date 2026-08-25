@@ -324,7 +324,7 @@ class SmartSerialController extends Controller
         $name = $nextPatient->patient->name ?? 'রোগী';
         $gender = $nextPatient->patient->gender ?? 'male';
         $prefix = $gender === 'female' ? 'জনাবা' : 'জনাব';
-        $voiceText = "{$prefix} {$name}, আপনি ভিতরে প্রবেশ করুন।";
+        $voiceText = "{$prefix} {$name}, এবার আপনি ভিতরে প্রবেশ করুন।";
 
         $session->update([
             'pending_announcement' => 'calling',
@@ -356,7 +356,7 @@ class SmartSerialController extends Controller
         $name = $q->patient->name ?? 'রোগী';
         $gender = $q->patient->gender ?? 'male';
         $prefix = $gender === 'female' ? 'জনাবা' : 'জনাব';
-        $voiceText = "{$prefix} {$name}, আপনি ভিতরে প্রবেশ করুন।";
+        $voiceText = "{$prefix} {$name}, এবার আপনি ভিতরে প্রবেশ করুন।";
 
         $q->session->update([
             'pending_announcement' => 'calling',
@@ -385,10 +385,10 @@ class SmartSerialController extends Controller
         $name = $q->patient->name ?? 'রোগী';
         $gender = $q->patient->gender ?? 'male';
         $prefix = $gender === 'female' ? 'জনাবা' : 'জনাব';
-        $voiceText = "{$prefix} {$name}, আপনি ভিতরে প্রবেশ করুন।";
+        $voiceText = "{$prefix} {$name}, এবার আপনি ভিতরে প্রবেশ করুন।";
 
         $q->session->update([
-            'pending_announcement' => 'calling',
+            'pending_announcement' => 'inside',
             'pending_queue_id' => $q->id,
             'pending_voice_text' => $voiceText,
             'pending_patient_name' => $name,
@@ -459,7 +459,7 @@ class SmartSerialController extends Controller
                     $nextName = $nextPatient->patient->name ?? 'রোগী';
                     $nextGender = $nextPatient->patient->gender ?? 'male';
                     $nextPrefix = $nextGender === 'female' ? 'জনাবা' : 'জনাব';
-                    $nextVoiceText = "{$nextPrefix} {$nextName}, আপনি ভিতরে প্রবেশ করুন।";
+                    $nextVoiceText = "{$nextPrefix} {$nextName}, এবার আপনি ভিতরে প্রবেশ করুন।";
 
                     // ─── STORE NEXT PATIENT VOICE CONTEXT ───
                     $session->update([

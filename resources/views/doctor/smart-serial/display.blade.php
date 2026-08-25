@@ -486,20 +486,20 @@
 
     {{-- Controls --}}
     <div class="voice-bar" style="flex-wrap:wrap;gap:6px;">
-        <button class="enable-btn" @click="toggleFullscreen()" x-text="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'" style="background:rgba(16,185,129,0.9);"></button>
-        <div class="status-dot" :class="{ 'active': speechReady }"></div>
-        <span class="label" x-text="voiceStatusText"></span>
-        <template x-if="!speechReady">
-            <button class="enable-btn" @click="enableVoice()">Enable Voice</button>
-        </template>
+         <!-- <button class="enable-btn" @click="toggleFullscreen()" x-text="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'" style="background:rgba(16,185,129,0.9);"></button>
+                <div class="status-dot" :class="{ 'active': speechReady }"></div>
+                <span class="label" x-text="voiceStatusText"></span>
+                <template x-if="!speechReady">
+                    <button class="enable-btn" @click="enableVoice()">Enable Voice</button>
+                </template> -->
         <template x-if="speechReady">
-            <div style="display:flex;gap:4px;align-items:center;">
+            <!-- <div style="display:flex;gap:4px;align-items:center;">
                 <input type="text" x-model="testPatientName" placeholder="নাসরিন সুলতানা"
                        style="width:180px;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:13px;"
                        @keydown.enter="testPatientNameVoice()">
                 <button class="enable-btn" @click="testPatientNameVoice()" style="background:rgba(139,92,246,0.9);font-size:12px;">&#128266; Test</button>
                 <button class="enable-btn" @click="logDiagnostics()" style="background:rgba(100,116,139,0.7);font-size:12px;">&#128269; Debug</button>
-            </div>
+            </div> -->
         </template>
     </div>
 
@@ -533,6 +533,10 @@
                 <div class="doctor-chamber" x-show="chamberName">
                     <div class="label">Chamber</div>
                     <div x-text="chamberName"></div>
+                </div>
+
+                <div class="full screen-toggle btn" @click="toggleFullscreen()" style="margin-top:24px;cursor:pointer;background:rgba(99,102,241,0.9);padding:10px 18px;border-radius:8px;font-size:0.85rem;font-weight:600;">
+                    <span x-text="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"></span>
                 </div>
 
                 {{-- Emergency Patient --}}
@@ -750,8 +754,8 @@
                 const name = patientName || 'রোগী';
                 const messages = {
                     preparing: `পরবর্তী সিরিয়ালের জন্য প্রস্তুত থাকুন, ${prefix} ${name}।`,
-                    calling: `${prefix} ${name}, আপনি এবার ভিতরে প্রবেশ করুন।`,
-                    inside: `${prefix} ${name}, ধন্যবাদ।`,
+                    calling: `${prefix} ${name}, এবার আপনি ভিতরে প্রবেশ করুন।`,
+                    inside: `${prefix} ${name}, এবার আপনি ভিতরে প্রবেশ করুন।`,
                     completed: `${prefix} ${name}, ধন্যবাদ।`,
                     recall: `${prefix} ${name}, আপনার সিরিয়াল আবার ডাকা হচ্ছে।`,
                     emergency: `জরুরি! ${prefix} ${name}, আপনাকে জরুরি ভিতরে প্রবেশ করুন।`,

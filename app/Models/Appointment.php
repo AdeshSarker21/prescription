@@ -34,4 +34,9 @@ class Appointment extends Model
     {
         return $this->belongsTo(User::class, 'booked_by');
     }
+
+    public function patientQueue()
+    {
+        return $this->hasOne(PatientQueue::class, 'appointment_id');
+    }
 }

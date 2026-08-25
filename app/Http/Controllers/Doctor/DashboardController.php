@@ -48,7 +48,7 @@ class DashboardController extends Controller
 
         $activePlan = auth()->user()->activePlan()?->name ?? 'N/A';
 
-        $hasSmartSerial = auth()->user()->hasModulePermission('smart_serial', 'view');
+        $hasSmartSerial = auth()->user()->hasModulePermission('smart_serial', 'smart-serial-manage');
         $activeSession = null;
         $queueStats = ['waiting' => 0, 'called' => 0, 'in_consultation' => 0, 'completed' => 0, 'skipped' => 0];
         $nextPatient = null;

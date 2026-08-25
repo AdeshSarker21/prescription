@@ -432,6 +432,7 @@ Route::middleware(['auth', 'verified', 'role:assistant', 'assistant.access'])->p
     Route::get('/patients/create', [\App\Http\Controllers\Assistant\PatientController::class, 'create'])->name('patients.create');
     Route::post('/patients', [\App\Http\Controllers\Assistant\PatientController::class, 'store'])->name('patients.store');
     Route::get('/patients/search', [\App\Http\Controllers\Assistant\PatientController::class, 'search'])->name('patients.search');
+    Route::post('/patients/quick-add', [\App\Http\Controllers\Assistant\PatientController::class, 'quickStore'])->name('patients.quick-add');
 
     // Doctor availability
     Route::get('/doctor/{doctor}/availability', [\App\Http\Controllers\Assistant\AppointmentController::class, 'availability'])->name('doctor.availability');
@@ -447,7 +448,12 @@ Route::middleware(['auth', 'verified', 'role:assistant', 'assistant.access'])->p
 
     // Smart Serial Queue
     Route::middleware(['module:smart_serial', 'smart_serial.access'])->prefix('smart-serial')->name('smart-serial.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'dashboard'])->name('dashboard');
         Route::get('/', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'index'])->name('index');
+        Route::get('/add-serial', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'addSerial'])->name('add-serial');
+        Route::get('/history', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'history'])->name('history');
+        Route::get('/search-patients', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'searchPatients'])->name('search-patients');
+        Route::post('/set-doctor', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'setDoctor'])->name('set-doctor');
         Route::post('/start', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'startSession'])->name('start');
         Route::patch('/{session}/close', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'closeSession'])->name('close');
         Route::patch('/{session}/pause', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'pauseSession'])->name('pause');
@@ -465,6 +471,7 @@ Route::middleware(['auth', 'verified', 'role:assistant', 'assistant.access'])->p
         Route::patch('/queue/{queueId}/skip', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'skip'])->name('skip');
         Route::patch('/queue/{queueId}/emergency', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'emergency'])->name('emergency');
         Route::get('/{session}/status', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'queueStatus'])->name('queue-status');
+        Route::get('/queue/{queueId}/status-history', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'statusHistory'])->name('status-history');
         Route::get('/queue/{queueId}/print-token', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'printToken'])->name('print-token');
         Route::get('/display/doctor/{doctorId}', [\App\Http\Controllers\Assistant\SmartSerialController::class, 'displayByDoctor'])->name('display.doctor');
     });

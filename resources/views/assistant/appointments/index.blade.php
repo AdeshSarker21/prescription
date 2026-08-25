@@ -56,6 +56,7 @@
                 <tr>
                     <th>Patient</th>
                     <th>Doctor</th>
+                    <th>Serial</th>
                     <th>Date & Time</th>
                     <th>Status</th>
                     <th class="text-right">Actions</th>
@@ -76,6 +77,15 @@
                         </div>
                     </td>
                     <td class="text-sm text-gray-600">Dr. {{ $apt->doctor->name ?? 'N/A' }}</td>
+                    <td>
+                        @if($apt->patientQueue)
+                            <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-indigo-100 text-indigo-700">
+                                #{{ $apt->patientQueue->formatted_serial }}
+                            </span>
+                        @else
+                            <span class="text-xs text-gray-400">—</span>
+                        @endif
+                    </td>
                     <td class="text-sm text-gray-600">{{ $apt->appointment_date->format('M d, Y h:i A') }}</td>
                     <td>
                         @php
@@ -118,7 +128,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="text-center py-12 text-gray-400">
+                    <td colspan="6" class="text-center py-12 text-gray-400">
                         <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         <p class="text-sm">No appointments found.</p>
                     </td>

@@ -153,14 +153,16 @@ class SmartSerialTtsController extends Controller
         $gender = $patient->gender ?? 'male';
         $prefix = $gender === 'female' ? 'জনাবা' : 'জনাব';
 
-        return match ($type) {
-            'preparing' => "পরবর্তী সিরিয়ালের জন্য প্রস্তুত থাকুন, {$prefix} {$name}।",
-            'calling' => "{$prefix} {$name}, আপনি এবার ভিতরে প্রবেশ করুন।",
-            'inside' => "{$prefix} {$name}, ধন্যবাদ।",
-            'emergency' => "জরুরি! {$prefix} {$name}, আপনাকে জরুরি ভিতরে প্রবেশ করুন।",
-            'recall' => "{$prefix} {$name}, আপনার সিরিয়াল আবার ডাকা হচ্ছে।",
-            'completed' => "{$prefix} {$name}, ধন্যবাদ।",
-            default => "{$prefix} {$name}, আপনি এবার ভিতরে প্রবেশ করুন।",
+       return match ($type) {
+            'calling' => "{$prefix} {$name}, পরবর্তী সিরিয়ালের জন্য অপেক্ষা করুন",
+
+            'recall' => "{$prefix} {$name}, আবার আপনাকে প্রস্তুত থাকার জন্য জানানো যাচ্ছে।",
+
+            'inside' => "{$prefix} {$name}, এবার আপনি ভিতরে প্রবেশ করুন।",
+
+            'completed' => "{$prefix} {$name}, আপনাকে ধন্যবাদ, আবার আসবেন।",
+
+            default => "{$prefix} {$name}, এবার আপনি ভিতরে প্রবেশ করুন।",
         };
     }
 }

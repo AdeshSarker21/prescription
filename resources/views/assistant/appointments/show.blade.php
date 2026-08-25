@@ -59,6 +59,22 @@
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Booked By</p>
                 <p class="text-sm font-semibold text-gray-800 mt-1">{{ $appointment->bookedBy->name ?? 'Self-booked' }}</p>
             </div>
+            @if($appointment->patientQueue)
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Serial Number</p>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-lg font-bold text-indigo-600">#{{ $appointment->patientQueue->formatted_serial }}</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                        @if($appointment->patientQueue->status === 'waiting') bg-yellow-100 text-yellow-700
+                        @elseif($appointment->patientQueue->status === 'completed') bg-green-100 text-green-700
+                        @elseif($appointment->patientQueue->status === 'cancelled') bg-red-100 text-red-700
+                        @else bg-blue-100 text-blue-700 @endif">
+                        {{ ucfirst($appointment->patientQueue->status) }}
+                    </span>
+                </div>
+                <p class="text-xs text-gray-500 mt-0.5">Queue: {{ $appointment->patientQueue->session?->session_date?->format('d M, Y') ?? 'N/A' }}</p>
+            </div>
+            @endif
         </div>
 
         @if($appointment->reason)

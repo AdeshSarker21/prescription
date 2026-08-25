@@ -84,4 +84,38 @@ class PatientController extends Controller
 
         return response()->json($patients);
     }
+
+    public function quickStore(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'gender' => 'nullable|string|in:male,female,other',
+            'age' => 'nullable|integer|min:0|max:150',
+            'address' => 'nullable|string',
+        ]);
+
+        if (isset($data['age']) && $data['age'] !== '' && $data['age'] !== null) {
+            $data['date_of_birth'] = now()->subYears((int) $data['age'])->startOfYear()->toDateString();
+        }
+        unset($data['age']);
+
+        $doctorIds = auth()->user()->getAccessibleDoctorIds();
+        $data['doctor_id'] = $doctorIds->first();
+        $data['patient_number'] = 'PT-' . date('Ymd') . '-' . str_pad((Patient::max('id') ?? 0) + 1, 4, '0', STR_PAD_LEFT);
+
+        $patient = Patient::create($data);
+
+        return response()->json([
+            'success' => true,
+            'patient' => [
+                'id' => $patient->id,
+                'name' => $patient->name,
+                'phone' => $patient->phone,
+                'gender' => $patient->gender,
+                'age' => $request->input('age'),
+                'address' => $patient->address,
+            ],
+        ]);
+    }
 }
