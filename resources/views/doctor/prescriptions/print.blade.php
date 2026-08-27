@@ -3,14 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <title>Prescription #{{ $prescription->prescription_number }}</title>
+    @php
+        $layout = [
+            'paper_size' => $doctorSetting->paper_size ?? 'A4',
+            'page_w' => $doctorSetting->paper_width_mm ?? 210,
+            'page_h' => $doctorSetting->paper_height_mm ?? 297,
+            'h_mt' => $doctorSetting->header_margin_top_mm ?? 0,
+            'h_mr' => $doctorSetting->header_margin_right_mm ?? 0,
+            'h_mb' => $doctorSetting->header_margin_bottom_mm ?? 0,
+            'h_ml' => $doctorSetting->header_margin_left_mm ?? 0,
+            'h_pt' => $doctorSetting->header_padding_top_mm ?? 5,
+            'h_pr' => $doctorSetting->header_padding_right_mm ?? 9,
+            'h_pb' => $doctorSetting->header_padding_bottom_mm ?? 5,
+            'h_pl' => $doctorSetting->header_padding_left_mm ?? 9,
+            'f_mt' => $doctorSetting->footer_margin_top_mm ?? 0,
+            'f_mr' => $doctorSetting->footer_margin_right_mm ?? 0,
+            'f_mb' => $doctorSetting->footer_margin_bottom_mm ?? 0,
+            'f_ml' => $doctorSetting->footer_margin_left_mm ?? 0,
+            'f_pt' => $doctorSetting->footer_padding_top_mm ?? 4,
+            'f_pr' => $doctorSetting->footer_padding_right_mm ?? 7,
+            'f_pb' => $doctorSetting->footer_padding_bottom_mm ?? 4,
+            'f_pl' => $doctorSetting->footer_padding_left_mm ?? 7,
+        ];
+        $paperMap = ['A4' => ['w' => 210, 'h' => 297], 'A5' => ['w' => 148, 'h' => 210], 'Letter' => ['w' => 216, 'h' => 279]];
+        $pw = $paperMap[$layout['paper_size']]['w'] ?? $layout['page_w'];
+        $ph = $paperMap[$layout['paper_size']]['h'] ?? $layout['page_h'];
+        if ($layout['paper_size'] === 'Custom') { $pw = $layout['page_w']; $ph = $layout['page_h']; }
+    @endphp
     <style>
         @media print {
             body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            @page { size: A4; margin: 0; }
+            @page { size: {{ $layout['paper_size'] === 'Custom' ? $pw . 'mm ' . $ph . 'mm' : $layout['paper_size'] }}; margin: 0; }
         }
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; display: flex; justify-content: center; }
-        .page { width: 210mm; min-height: 297mm; background-color: #fff; box-sizing: border-box; display: flex; flex-direction: column; box-shadow: 0 0 10px rgba(0,0,0,0.1); overflow: hidden; }
-        .header { background-color: #d1ebd8; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a5a3a; }
+        .page { width: {{ $pw }}mm; min-height: {{ $ph }}mm; background-color: #fff; box-sizing: border-box; display: flex; flex-direction: column; box-shadow: 0 0 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background-color: transparent; padding: {{ $layout['h_pt'] }}mm {{ $layout['h_pr'] }}mm {{ $layout['h_pb'] }}mm {{ $layout['h_pl'] }}mm; margin: {{ $layout['h_mt'] }}mm {{ $layout['h_mr'] }}mm {{ $layout['h_mb'] }}mm {{ $layout['h_ml'] }}mm; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a5a3a; }
         .header-left { width: 40%; text-align: left; color: #1a5a3a; }
         .header-left h1 { margin: 0; font-size: 24px; font-weight: bold; }
         .header-left .sub { margin: 3px 0 0 0; font-size: 13px; font-weight: bold; color: #333; }
@@ -91,7 +118,7 @@
         .followup-text { font-size: 12px; margin-top: 8px; color: #333; }
         .footer-top { background-color: #ffe600; padding: 6px; text-align: center; font-size: 15px; font-weight: bold; color: #000; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; }
         .footer-top .normal { font-weight: normal; font-size: 14px; }
-        .footer-bottom { background-color: #059b54; padding: 12px 20px; display: flex; justify-content: space-between; align-items: flex-start; color: #fff; box-sizing: border-box; font-size: 12px; line-height: 1.4; }
+        .footer-bottom { background-color: transparent; padding: {{ $layout['f_pt'] }}mm {{ $layout['f_pr'] }}mm {{ $layout['f_pb'] }}mm {{ $layout['f_pl'] }}mm; margin: {{ $layout['f_mt'] }}mm {{ $layout['f_mr'] }}mm {{ $layout['f_mb'] }}mm {{ $layout['f_ml'] }}mm; display: flex; justify-content: space-between; align-items: flex-start; color: #000; box-sizing: border-box; font-size: 12px; line-height: 1.4; }
         .footer-bottom .col { width: 35%; }
         .footer-bottom .col-center { width: 30%; text-align: center; }
         .footer-bottom .col-right { width: 35%; text-align: right; }
@@ -132,7 +159,9 @@
             @endphp
 
             @if($customHeader)
-                {!! $customHeader->content !!}
+                <div class="header">
+                    {!! $customHeader->content !!}
+                </div>
             @else
             <div class="header">
                 <div class="header-left">
@@ -428,7 +457,7 @@
 
             <div>
                 @if($customFooter)
-                    {!! $customFooter->content !!}
+                    <div class="footer-bottom">{!! $customFooter->content !!}</div>
                 @else
                 @php $chamberCount = count($chambers); @endphp
                 @if($chamberCount > 0)
@@ -474,7 +503,7 @@
                     @endif
                 </div>
                 @else
-                <div class="footer-bottom" style="background-color:#059b54;padding:12px 20px;text-align:center;color:#fff;">
+                <div class="footer-bottom" style=";text-align:center;color:#000;">
                     @if($doctor->emergency_contact)
                     <div style="width:100%;">
                         <div class="urgent">চিকিৎসা সংক্রান্ত জরুরী প্রয়োজনে</div>

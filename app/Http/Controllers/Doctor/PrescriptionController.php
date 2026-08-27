@@ -670,7 +670,7 @@ class PrescriptionController extends Controller
             'statusLogs.changedBy',
         ]);
 
-        $doctorSetting = \App\Models\DoctorPrescriptionSetting::where('doctor_id', $prescription->doctor_id)->first();
+        $doctorSetting = \App\Models\DoctorPrescriptionSetting::firstOrCreate(['doctor_id' => $prescription->doctor_id]);
         $customHeader = null;
         $customFooter = null;
 
@@ -683,7 +683,7 @@ class PrescriptionController extends Controller
             }
         }
 
-        return view('doctor.prescriptions.show', compact('prescription', 'customHeader', 'customFooter'));
+        return view('doctor.prescriptions.show', compact('prescription', 'customHeader', 'customFooter', 'doctorSetting'));
     }
 
     public function edit(Prescription $prescription): View
@@ -1162,7 +1162,7 @@ class PrescriptionController extends Controller
 
         $prescription->load(['doctor', 'patient', 'items.medicine', 'items.seal', 'advice', 'advices', 'complaints', 'tests', 'testReports', 'testReportResults']);
 
-        $doctorSetting = \App\Models\DoctorPrescriptionSetting::where('doctor_id', $prescription->doctor_id)->first();
+        $doctorSetting = \App\Models\DoctorPrescriptionSetting::firstOrCreate(['doctor_id' => $prescription->doctor_id]);
         $customHeader = null;
         $customFooter = null;
 
@@ -1175,7 +1175,7 @@ class PrescriptionController extends Controller
             }
         }
 
-        return view('doctor.prescriptions.print', compact('prescription', 'customHeader', 'customFooter'));
+        return view('doctor.prescriptions.print', compact('prescription', 'customHeader', 'customFooter', 'doctorSetting'));
     }
 
     public function updateStatus(Request $request, Prescription $prescription): RedirectResponse
