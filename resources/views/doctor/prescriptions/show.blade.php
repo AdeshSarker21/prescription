@@ -250,7 +250,25 @@
                 @else
                 <tr>
                     <td style="padding:6px;font-size:13px;">
-                        <strong>{{ $item->medicine_name }}{{ $item->dosage && !str_contains($item->medicine_name, $item->dosage) ? ' ' . $item->dosage : '' }}</strong>
+                        @php
+                            $catName = $item->medicine?->category?->name ?? '';
+                            $catAbbr = match($catName) {
+                                'Tablet' => 'Tab',
+                                'Capsule' => 'Cap',
+                                'Syrup' => 'Syr',
+                                'Injection' => 'Inj',
+                                'Cream' => 'Cream',
+                                'Drops' => 'Drop',
+                                'Ointment' => 'Oint',
+                                'Gel' => 'Gel',
+                                default => $catName ? ucfirst(mb_substr($catName, 0, 3)) : '',
+                            };
+                            $displayName = $item->medicine_name;
+                            if ($catAbbr && !str_starts_with($displayName, $catAbbr . ' ') && !str_starts_with($displayName, $catName)) {
+                                $displayName = $catAbbr . '. ' . $displayName;
+                            }
+                        @endphp
+                        <strong>{{ $displayName }}{{ $item->dosage && !str_contains($item->medicine_name, $item->dosage) ? ' ' . $item->dosage : '' }}</strong>
                         @if($item->seal_text)
                         <br><strong style="font-size:12px;color:#333;">{{ $item->seal_text }}</strong>
                         @endif

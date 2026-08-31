@@ -73,6 +73,26 @@ class MedicineController extends Controller
             'reason' => 'nullable|string',
         ]);
 
+        $existingMedicine = Medicine::findDuplicate(
+            $data['name'],
+            $data['strength'] ?? null,
+            $data['generic_name'] ?? null
+        );
+
+        if ($existingMedicine) {
+            return redirect()->back()->with('error', 'This medicine already exists (ID: ' . $existingMedicine->id . ').');
+        }
+
+        $existingSuggestion = MedicineSuggestion::whereRaw('LOWER(name) = ?', [mb_strtolower(trim($data['name']))])
+            ->whereRaw('LOWER(COALESCE(strength, \'\')) = ?', [mb_strtolower(trim($data['strength'] ?? ''))])
+            ->where('doctor_id', auth()->id())
+            ->where('status', '!=', 'rejected')
+            ->first();
+
+        if ($existingSuggestion) {
+            return redirect()->back()->with('error', 'You have already suggested this medicine. Status: ' . ucfirst($existingSuggestion->status) . '.');
+        }
+
         $data['doctor_id'] = auth()->id();
         $data['status'] = 'pending';
 
@@ -101,7 +121,8 @@ class MedicineController extends Controller
             return response()->json([]);
         }
 
-        $medicines = Medicine::where('status', 'active')
+        $medicines = Medicine::with('category')
+            ->where('status', 'active')
             ->where('is_global', true)
             ->where(function ($q) use ($query) {
                 $q->where('brand_name', 'like', "%{$query}%")
@@ -109,16 +130,17 @@ class MedicineController extends Controller
                     ->orWhere('generic_name', 'like', "%{$query}%")
                     ->orWhere('strength', 'like', "%{$query}%");
             })
-            ->select('id', 'name', 'brand_name', 'generic_name', 'strength')
+            ->select('id', 'name', 'brand_name', 'generic_name', 'strength', 'category_id')
             ->take(15)
             ->get()
             ->map(fn($m) => [
-                'id'           => $m->id,
-                'brand_name'   => $m->brand_name ?? $m->name,
-                'name'         => $m->name,
-                'generic_name' => $m->generic_name ?? '',
-                'strength'     => $m->strength ?? '',
-                'display'      => trim(($m->brand_name ?? $m->name) . ($m->strength && !str_contains(($m->brand_name ?? $m->name), $m->strength) ? ' ' . $m->strength : '')),
+                'id'            => $m->id,
+                'brand_name'    => $m->brand_name ?? $m->name,
+                'name'          => $m->name,
+                'generic_name'  => $m->generic_name ?? '',
+                'strength'      => $m->strength ?? '',
+                'category_name' => $m->category?->name ?? '',
+                'display'       => trim(($m->brand_name ?? $m->name) . ($m->strength && !str_contains(($m->brand_name ?? $m->name), $m->strength) ? ' ' . $m->strength : '')),
             ]);
 
         return response()->json($medicines);
@@ -128,12 +150,17 @@ class MedicineController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'strength' => 'nullable|string|max:100',
+            'generic_name' => 'nullable|string|max:255',
         ]);
 
         $name = trim($request->input('name'));
+        $strength = $request->input('strength');
+        $genericName = $request->input('generic_name');
         $normalizedName = mb_strtolower($name);
 
         $existingSuggestion = MedicineSuggestion::whereRaw('LOWER(name) = ?', [$normalizedName])
+            ->whereRaw('LOWER(COALESCE(strength, \'\')) = ?', [mb_strtolower(trim($strength ?? ''))])
             ->where('doctor_id', auth()->id())
             ->where('status', '!=', 'rejected')
             ->first();
@@ -147,21 +174,20 @@ class MedicineController extends Controller
             ]);
         }
 
-        $duplicateMedicine = Medicine::whereRaw('LOWER(name) = ?', [$normalizedName])
-            ->orWhereRaw('LOWER(brand_name) = ?', [$normalizedName])
-            ->first();
+        $duplicateMedicine = Medicine::findDuplicate($name, $strength, $genericName);
 
         if ($duplicateMedicine) {
             return response()->json([
                 'success' => false,
-                'message' => 'Medicine already exists in the database.',
+                'message' => 'This medicine already exists.',
                 'medicine_id' => $duplicateMedicine->id,
             ]);
         }
 
         $suggestion = MedicineSuggestion::create([
             'name' => $name,
-            'strength' => $request->input('strength'),
+            'strength' => $strength,
+            'generic_name' => $genericName,
             'doctor_id' => auth()->id(),
             'status' => MedicineSuggestion::STATUS_PENDING,
             'reason' => 'Quick suggested from prescription form',

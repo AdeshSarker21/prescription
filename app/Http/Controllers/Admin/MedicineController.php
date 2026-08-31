@@ -7,6 +7,7 @@ use App\Models\Medicine;
 use App\Models\MedicineCategory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class MedicineController extends Controller
@@ -70,6 +71,16 @@ class MedicineController extends Controller
             'status' => 'required|in:active,pending,rejected',
         ]);
 
+        $existing = Medicine::findDuplicate(
+            $data['name'],
+            $data['strength'] ?? null,
+            $data['generic_name'] ?? null
+        );
+
+        if ($existing) {
+            return back()->withErrors(['name' => 'This medicine already exists (ID: ' . $existing->id . ').'])->withInput();
+        }
+
         $data['is_global'] = true;
         $data['created_by'] = $request->user()->id;
 
@@ -118,6 +129,17 @@ class MedicineController extends Controller
             'alcohol_warning' => 'boolean',
             'status' => 'required|in:active,pending,rejected',
         ]);
+
+        $existing = Medicine::findDuplicate(
+            $data['name'],
+            $data['strength'] ?? null,
+            $data['generic_name'] ?? null,
+            $medicine->id
+        );
+
+        if ($existing) {
+            return back()->withErrors(['name' => 'This medicine already exists (ID: ' . $existing->id . ').'])->withInput();
+        }
 
         $medicine->update($data);
 

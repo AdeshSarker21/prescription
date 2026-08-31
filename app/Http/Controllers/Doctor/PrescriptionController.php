@@ -392,22 +392,34 @@ class PrescriptionController extends Controller
 
             if (empty($item['medicine_id']) && !empty($item['medicine_name'])) {
                 $normalizedName = mb_strtolower(trim($item['medicine_name']));
-                $existingSuggestion = MedicineSuggestion::whereRaw('LOWER(name) = ?', [$normalizedName])
-                    ->where('doctor_id', auth()->id())
-                    ->where('status', '!=', MedicineSuggestion::STATUS_REJECTED)
-                    ->first();
 
-                if (!$existingSuggestion) {
-                    $suggestion = MedicineSuggestion::create([
-                        'name' => trim($item['medicine_name']),
-                        'strength' => $item['strength'] ?? null,
-                        'doctor_id' => auth()->id(),
-                        'status' => MedicineSuggestion::STATUS_PENDING,
-                        'reason' => 'Auto-suggested from prescription (missing medicine)',
-                    ]);
-                    $suggestionId = $suggestion->id;
+                $existingMedicine = Medicine::findDuplicate(
+                    $item['medicine_name'],
+                    $item['strength'] ?? null,
+                    null
+                );
+
+                if ($existingMedicine) {
+                    $item['medicine_id'] = $existingMedicine->id;
                 } else {
-                    $suggestionId = $existingSuggestion->id;
+                    $existingSuggestion = MedicineSuggestion::whereRaw('LOWER(name) = ?', [$normalizedName])
+                        ->whereRaw('LOWER(COALESCE(strength, \'\')) = ?', [mb_strtolower(trim($item['strength'] ?? ''))])
+                        ->where('doctor_id', auth()->id())
+                        ->where('status', '!=', MedicineSuggestion::STATUS_REJECTED)
+                        ->first();
+
+                    if (!$existingSuggestion) {
+                        $suggestion = MedicineSuggestion::create([
+                            'name' => trim($item['medicine_name']),
+                            'strength' => $item['strength'] ?? null,
+                            'doctor_id' => auth()->id(),
+                            'status' => MedicineSuggestion::STATUS_PENDING,
+                            'reason' => 'Auto-suggested from prescription (missing medicine)',
+                        ]);
+                        $suggestionId = $suggestion->id;
+                    } else {
+                        $suggestionId = $existingSuggestion->id;
+                    }
                 }
             }
 
@@ -891,22 +903,34 @@ class PrescriptionController extends Controller
 
             if (empty($item['medicine_id']) && !empty($item['medicine_name'])) {
                 $normalizedName = mb_strtolower(trim($item['medicine_name']));
-                $existingSuggestion = MedicineSuggestion::whereRaw('LOWER(name) = ?', [$normalizedName])
-                    ->where('doctor_id', auth()->id())
-                    ->where('status', '!=', MedicineSuggestion::STATUS_REJECTED)
-                    ->first();
 
-                if (!$existingSuggestion) {
-                    $suggestion = MedicineSuggestion::create([
-                        'name' => trim($item['medicine_name']),
-                        'strength' => $item['strength'] ?? null,
-                        'doctor_id' => auth()->id(),
-                        'status' => MedicineSuggestion::STATUS_PENDING,
-                        'reason' => 'Auto-suggested from prescription (missing medicine)',
-                    ]);
-                    $suggestionId = $suggestion->id;
+                $existingMedicine = Medicine::findDuplicate(
+                    $item['medicine_name'],
+                    $item['strength'] ?? null,
+                    null
+                );
+
+                if ($existingMedicine) {
+                    $item['medicine_id'] = $existingMedicine->id;
                 } else {
-                    $suggestionId = $existingSuggestion->id;
+                    $existingSuggestion = MedicineSuggestion::whereRaw('LOWER(name) = ?', [$normalizedName])
+                        ->whereRaw('LOWER(COALESCE(strength, \'\')) = ?', [mb_strtolower(trim($item['strength'] ?? ''))])
+                        ->where('doctor_id', auth()->id())
+                        ->where('status', '!=', MedicineSuggestion::STATUS_REJECTED)
+                        ->first();
+
+                    if (!$existingSuggestion) {
+                        $suggestion = MedicineSuggestion::create([
+                            'name' => trim($item['medicine_name']),
+                            'strength' => $item['strength'] ?? null,
+                            'doctor_id' => auth()->id(),
+                            'status' => MedicineSuggestion::STATUS_PENDING,
+                            'reason' => 'Auto-suggested from prescription (missing medicine)',
+                        ]);
+                        $suggestionId = $suggestion->id;
+                    } else {
+                        $suggestionId = $existingSuggestion->id;
+                    }
                 }
             }
 

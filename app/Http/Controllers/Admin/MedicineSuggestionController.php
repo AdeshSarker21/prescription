@@ -64,12 +64,11 @@ class MedicineSuggestionController extends Controller
     public function approve(MedicineSuggestion $medicine_suggestion): RedirectResponse
     {
         return DB::transaction(function () use ($medicine_suggestion) {
-            $name = trim($medicine_suggestion->name);
-            $normalizedName = mb_strtolower($name);
-
-            $duplicate = Medicine::whereRaw("LOWER(COALESCE(brand_name, name)) = ?", [$normalizedName])
-                ->orWhereRaw("LOWER(name) = ?", [$normalizedName])
-                ->first();
+            $duplicate = Medicine::findDuplicate(
+                $medicine_suggestion->name,
+                $medicine_suggestion->strength,
+                $medicine_suggestion->generic_name
+            );
 
             if ($duplicate) {
                 $medicine_suggestion->update([
@@ -83,8 +82,8 @@ class MedicineSuggestionController extends Controller
             }
 
             $medicine = Medicine::create([
-                'name'         => $name,
-                'brand_name'   => $name,
+                'name'         => $medicine_suggestion->name,
+                'brand_name'   => $medicine_suggestion->name,
                 'generic_name' => $medicine_suggestion->generic_name,
                 'strength'     => $medicine_suggestion->strength,
                 'category_id'  => $medicine_suggestion->category_id,

@@ -49,6 +49,12 @@
         font-size: 10px;
         margin-left: 4px;
     }
+    .med-autocomplete-item .med-category {
+        color: #6366f1;
+        font-size: 10px;
+        font-weight: 600;
+        margin-right: 4px;
+    }
     .med-no-results {
         padding: 10px 12px;
         color: #94a3b8;
@@ -533,6 +539,7 @@
                                                  :class="{ 'active': i === medHighlighted }"
                                                  @click="medSelect(index, result)"
                                                  @mouseenter="medHighlighted = i">
+                                                <span class="med-category" x-text="catAbbr(result.category_name)"></span>
                                                 <strong x-text="result.brand_name + (result.strength && !result.brand_name.includes(result.strength) ? ' ' + result.strength : '')"></strong>
                                                 <span class="med-generic" x-text="result.generic_name ? '(' + result.generic_name + ')' : ''"></span>
                                             </div>
@@ -808,6 +815,7 @@
             'medicine_id' => $i->medicine_id,
             'medicine_name' => $i->medicine_name,
             'strength' => $i->dosage,
+            'category_name' => $i->medicine?->category?->name ?? '',
             'frequency' => $i->frequency,
             'duration' => $i->duration,
             'instructions' => $i->instructions,
@@ -928,6 +936,7 @@
                     medicine_name: i.medicine_name || '',
                     medicine_id: i.medicine_id || '',
                     strength: i.strength || '',
+                    category_name: i.category_name || '',
                     frequency: i.frequency || '',
                     duration: i.duration || '',
                     instructions: i.instructions || '',
@@ -937,7 +946,7 @@
                     seal_details: i.seal_details || '',
                 };
             })
-            : [{ type: 'medicine', medicine_name: '', medicine_id: '', strength: '', frequency: '', duration: '', instructions: '', sort_order: 0, seal_id: null, seal_text: '', seal_details: '' }];
+            : [{ type: 'medicine', medicine_name: '', medicine_id: '', strength: '', category_name: '', frequency: '', duration: '', instructions: '', sort_order: 0, seal_id: null, seal_text: '', seal_details: '' }];
 
         return {
             items: seedItems,
@@ -949,8 +958,13 @@
             medLoading: false,
             medQuery: '',
             targetMedicineForSeal: -1,
+            catAbbr(catName) {
+                if (!catName) return '';
+                const map = { 'Tablet': 'Tab', 'Capsule': 'Cap', 'Syrup': 'Syr', 'Injection': 'Inj', 'Cream': 'Cream', 'Drops': 'Drop', 'Ointment': 'Oint', 'Gel': 'Gel', 'Suspension': 'Susp', 'Solution': 'Sol', 'Inhaler': 'Inh', 'Suppository': 'Supp', 'Patch': 'Patch', 'Drops (Eye)': 'Eye Drop', 'Drops (Ear)': 'Ear Drop', 'Drops (Nose)': 'Nasal Drop' };
+                return map[catName] || catName.substring(0, 3);
+            },
             addItem() {
-                this.items.push({ type: 'medicine', medicine_name: '', medicine_id: '', strength: '', frequency: '', duration: '', instructions: '', sort_order: this.nextSortOrder++, seal_id: null, seal_text: '', seal_details: '' });
+                this.items.push({ type: 'medicine', medicine_name: '', medicine_id: '', strength: '', category_name: '', frequency: '', duration: '', instructions: '', sort_order: this.nextSortOrder++, seal_id: null, seal_text: '', seal_details: '' });
             },
             addSeal(sealId, sealName, sealDetails) {
                 const pos = this.nextSortOrder++;
@@ -987,9 +1001,12 @@
                 this.medLoading = false;
             },
             medSelect(index, med) {
-                this.items[index].medicine_name = med.brand_name + (med.strength && !med.brand_name.includes(med.strength) ? ' ' + med.strength : '');
+                const abbr = this.catAbbr(med.category_name);
+                const namePart = med.brand_name + (med.strength && !med.brand_name.includes(med.strength) ? ' ' + med.strength : '');
+                this.items[index].medicine_name = (abbr ? abbr + ' ' : '') + namePart;
                 this.items[index].medicine_id = med.id;
                 this.items[index].strength = med.strength;
+                this.items[index].category_name = med.category_name || '';
                 this.medOpen = -1;
                 this.medResults = [];
                 this.medHighlighted = -1;

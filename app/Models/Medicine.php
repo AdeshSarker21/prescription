@@ -8,6 +8,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Medicine extends Model
 {
+    public static function findDuplicate(string $name, ?string $strength = null, ?string $genericName = null, ?int $excludeId = null): ?self
+    {
+        return static::whereRaw('LOWER(name) = ?', [mb_strtolower(trim($name))])
+            ->whereRaw('LOWER(COALESCE(strength, \'\')) = ?', [mb_strtolower(trim($strength ?? ''))])
+            ->whereRaw('LOWER(COALESCE(generic_name, \'\')) = ?', [mb_strtolower(trim($genericName ?? ''))])
+            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->first();
+    }
+
     protected $fillable = [
         'name', 'generic_name', 'brand_name', 'category_id',
         'strength', 'active_ingredients', 'salt_composition',
