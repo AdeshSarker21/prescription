@@ -153,6 +153,7 @@
     <x-item-search-modal type="test" title="Add Tests" />
     <x-item-search-modal type="medical_history" title="Add Medical History" />
     <x-item-search-modal type="advice" title="Add Advice" />
+    <x-item-search-modal type="procedure" title="Add Procedures" />
 
     <section class="patient-info-grid">
         <div class="form-group" style="grid-column:span 2;">
@@ -474,6 +475,32 @@
             </div>
             @endif
 
+            {{-- Procedure Section --}}
+            @if($featureSetting->procedure)
+            <div class="glass-card pane-section" x-data="modalProcedures()" id="procedures-section">
+                <h3 style="display:flex;justify-content:space-between;align-items:center;">
+                    Procedure
+                    <button type="button" @click="$dispatch('open-item-modal-procedure')" class="preset-btn" style="font-size:11px;padding:3px 12px;display:inline-flex;align-items:center;gap:4px;">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                        Add
+                    </button>
+                </h3>
+                <div x-show="selected.length > 0" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;min-height:40px;padding:8px;background:rgba(255,255,255,0.4);border:1px solid rgba(148,163,184,0.2);border-radius:8px;">
+                    <template x-for="(proc, i) in selected" :key="proc.id || i">
+                        <div class="complain-item">
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <span x-text="proc.name" style="font-weight:600;"></span>
+                                <button type="button" @click="removeItem(i)" style="border:none;background:none;cursor:pointer;font-size:16px;line-height:1;color:var(--danger);padding:0 2px;">&times;</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div x-show="selected.length === 0" style="text-align:center;padding:12px;color:#999;font-size:12px;">
+                    Click "Add" to select procedures
+                </div>
+            </div>
+            @endif
+
             <div class="glass-card pane-section">
                 <h3>D D</h3>
                 <textarea name="diagnosis" rows="3" class="w-full" style="padding:8px;border:1px solid rgba(148,163,184,0.3);border-radius:8px;background:rgba(255,255,255,0.6);font-size:13px;outline:none;width:100%;resize:vertical;">{{ $prescription->diagnosis }}</textarea>
@@ -682,6 +709,7 @@
             <input type="hidden" name="advice_json" id="advice-json">
             <input type="hidden" name="medical_histories_json" id="medical-histories-json">
             <input type="hidden" name="seals_json" id="seals-json">
+            <input type="hidden" name="procedures_json" id="procedures-json">
         </div>
     </div>
 </form>
@@ -839,6 +867,10 @@
             'name' => $m->condition_name,
         ])->values(),
         'advice' => $prescription->advices->map(fn($a) => ['id' => $a->id, 'name' => $a->name])->values(),
+        'procedures' => $prescription->procedures->map(fn($p) => [
+            'id' => $p->procedure_id,
+            'name' => $p->procedure_name,
+        ])->values(),
         'familyHistory' => $prescription->family_history_data,
         'menstrualHistory' => $prescription->menstrual_history_data,
         'drugHistory' => $prescription->drug_history_data,
@@ -1163,6 +1195,26 @@
                     const items = e.detail.items || [];
                     items.forEach(item => {
                         if (!this.selected.find(a => a.id === item.id)) {
+                            this.selected.push({ id: item.id, name: item.name });
+                        }
+                    });
+                });
+            },
+            removeItem(i) {
+                this.selected.splice(i, 1);
+            }
+        };
+    }
+
+    function modalProcedures() {
+        const editData = window.editPrescriptionData || {};
+        return {
+            selected: (editData.procedures || []).map(function(p) { return { id: p.id, name: p.name }; }),
+            init() {
+                window.addEventListener('items-confirmed-procedure', (e) => {
+                    const items = e.detail.items || [];
+                    items.forEach(item => {
+                        if (!this.selected.find(p => p.id === item.id)) {
                             this.selected.push({ id: item.id, name: item.name });
                         }
                     });
@@ -1931,6 +1983,15 @@
         }
     }
 
+    function serializeProcedures() {
+        const el = document.getElementById('procedures-section');
+        if (el && window.Alpine) {
+            const data = window.Alpine.$data(el);
+            const procedures = (data.selected || []).map(p => ({ id: p.id, name: p.name }));
+            document.getElementById('procedures-json').value = JSON.stringify(procedures);
+        }
+    }
+
     function serializeMedicalHistories() {
         const el = document.getElementById('medical-history-section');
         if (el && window.Alpine) {
@@ -1955,6 +2016,7 @@
         serializeAdvice();
         serializeMedicalHistories();
         serializeSeals();
+        serializeProcedures();
         document.getElementById('prescription-form').submit();
     }
 
@@ -1964,6 +2026,7 @@
         serializeAdvice();
         serializeMedicalHistories();
         serializeSeals();
+        serializeProcedures();
         const form = document.getElementById('prescription-form');
         form.insertAdjacentHTML('beforeend', '<input type="hidden" name="_add_medicines_later" value="1">');
         form.submit();
@@ -1981,6 +2044,7 @@
         serializeAdvice();
         serializeMedicalHistories();
         serializeSeals();
+        serializeProcedures();
     });
 
     $(document).ready(function() {
@@ -2143,6 +2207,7 @@
         Alpine.data('itemSearchModal_test', createItemSearchModal('test'));
         Alpine.data('itemSearchModal_medical_history', createItemSearchModal('medical_history'));
         Alpine.data('itemSearchModal_advice', createItemSearchModal('advice'));
+        Alpine.data('itemSearchModal_procedure', createItemSearchModal('procedure'));
     });
 </script>
 @endpush

@@ -4,7 +4,7 @@
     x-data="aiAssistantPanel({{ $patientId ? json_encode($patientId) : 'null' }})"
     x-init="init()"
     @patient-selected.window="patientId = $event.detail.patientId"
-    style="position:fixed;bottom:20px;right:20px;z-index:9999;"
+    style="position:fixed;bottom:20px;left:20px;z-index:9999;"
 >
     {{-- Toggle Button --}}
     <button
@@ -31,7 +31,7 @@
         x-transition:leave-end="opacity-0 translate-y-4 scale-95"
         @click.away="open = false"
         class="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col"
-        style="width:420px;max-height:600px;bottom:80px;right:0;position:absolute;"
+        style="width:420px;max-height:600px;bottom:80px;left:0;position:absolute;"
     >
         {{-- Header --}}
         <div class="px-4 py-3 flex items-center justify-between" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;">

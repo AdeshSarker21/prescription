@@ -195,6 +195,19 @@
             @endif
         </div>
 
+        @if($prescription->procedures->count() > 0)
+        <div class="pane-section">
+            <h3>Procedures:</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#fff;border:1px solid #71a9ce;min-height:36px;font-size:13px;">
+                @foreach($prescription->procedures as $procedure)
+                <div style="padding:4px 8px;background:#e0f0ff;border:1px solid #71a9ce;border-radius:4px;">
+                    <strong>{{ $procedure->procedure_name }}</strong>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         {{-- Status Timeline --}}
         @if($prescription->statusLogs->count() > 0)
         <div class="pane-section" style="margin-top:16px;">

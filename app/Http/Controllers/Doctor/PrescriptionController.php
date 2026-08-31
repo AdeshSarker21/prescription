@@ -17,6 +17,8 @@ use App\Models\PatientMedicalHistory;
 use App\Models\Prescription;
 use App\Models\PrescriptionAdvice;
 use App\Models\PrescriptionItem;
+use App\Models\PrescriptionProcedure;
+use App\Models\Procedure;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -322,6 +324,7 @@ class PrescriptionController extends Controller
             'drug_history_data' => 'nullable|string',
             'ot_note_data' => 'nullable|string',
             'anesthesia_data' => 'nullable|string',
+            'procedures_json' => 'nullable|string',
         ]);
 
         // Validate no duplicate seal IDs in items and seals_json
@@ -651,6 +654,34 @@ class PrescriptionController extends Controller
             $prescription->update(['anesthesia_data' => json_decode($data['anesthesia_data'], true)]);
         }
 
+        if (!empty($data['procedures_json'])) {
+            $procedures = json_decode($data['procedures_json'], true);
+            if (is_array($procedures)) {
+                $sortOrder = 0;
+                foreach ($procedures as $procedure) {
+                    if (!empty($procedure['id'])) {
+                        $p = Procedure::find($procedure['id']);
+                        if ($p) {
+                            $p->increment('used_count');
+                            $prescription->procedures()->create([
+                                'procedure_id' => $p->id,
+                                'procedure_name' => $p->name,
+                                'sort_order' => $sortOrder++,
+                            ]);
+                        }
+                    } elseif (!empty($procedure['name'])) {
+                        $p = Procedure::findByNameOrCreate($procedure['name'], auth()->id());
+                        $p->increment('used_count');
+                        $prescription->procedures()->create([
+                            'procedure_id' => $p->id,
+                            'procedure_name' => $p->name,
+                            'sort_order' => $sortOrder++,
+                        ]);
+                    }
+                }
+            }
+        }
+
         if ($request->has('_print') || $request->input('action') === 'print') {
             return redirect()->route('doctor.prescriptions.print', $prescription);
         }
@@ -679,6 +710,7 @@ class PrescriptionController extends Controller
             'tests',
             'testReports',
             'testReportResults',
+            'procedures',
             'statusLogs.changedBy',
         ]);
 
@@ -716,7 +748,7 @@ class PrescriptionController extends Controller
             ->select('id', 'name', 'brand_name', 'strength', 'generic_name')
             ->get();
         $investigationGroups = InvestigationGroup::with('parameters')->orderBy('sort_order')->get();
-        $prescription->load(['items.seal', 'advice', 'complaints', 'tests', 'testReports']);
+        $prescription->load(['items.seal', 'advice', 'complaints', 'tests', 'testReports', 'procedures']);
 
         // Get doctor feature settings
         $featureSetting = DoctorFeatureSetting::getForDoctor($doctorId);
@@ -787,6 +819,7 @@ class PrescriptionController extends Controller
             'drug_history_data' => 'nullable|string',
             'ot_note_data' => 'nullable|string',
             'anesthesia_data' => 'nullable|string',
+            'procedures_json' => 'nullable|string',
         ]);
 
         // Validate no duplicate seal IDs in items and seals_json
@@ -1156,6 +1189,36 @@ class PrescriptionController extends Controller
             'anesthesia_data' => !empty($data['anesthesia_data']) ? json_decode($data['anesthesia_data'], true) : null,
         ];
         $prescription->update($featureData);
+
+        // Save procedures
+        $prescription->procedures()->delete();
+        if (!empty($data['procedures_json'])) {
+            $procedures = json_decode($data['procedures_json'], true);
+            if (is_array($procedures)) {
+                $sortOrder = 0;
+                foreach ($procedures as $procedure) {
+                    if (!empty($procedure['id'])) {
+                        $p = Procedure::find($procedure['id']);
+                        if ($p) {
+                            $p->increment('used_count');
+                            $prescription->procedures()->create([
+                                'procedure_id' => $p->id,
+                                'procedure_name' => $p->name,
+                                'sort_order' => $sortOrder++,
+                            ]);
+                        }
+                    } elseif (!empty($procedure['name'])) {
+                        $p = Procedure::findByNameOrCreate($procedure['name'], auth()->id());
+                        $p->increment('used_count');
+                        $prescription->procedures()->create([
+                            'procedure_id' => $p->id,
+                            'procedure_name' => $p->name,
+                            'sort_order' => $sortOrder++,
+                        ]);
+                    }
+                }
+            }
+        }
 
         if ($request->has('_print') || $request->input('action') === 'print') {
             return redirect()->route('doctor.prescriptions.print', $prescription);
