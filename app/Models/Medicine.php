@@ -12,9 +12,12 @@ class Medicine extends Model
         'name', 'generic_name', 'brand_name', 'category_id',
         'strength', 'active_ingredients', 'salt_composition',
         'company_name', 'country', 'batch_required',
+        'indication', 'composition', 'pharmacology',
         'adult_dose', 'child_dose', 'max_daily_dose', 'duration_recommendation',
         'side_effects', 'contraindications', 'pregnancy_safe', 'allergy_warning',
         'drug_interaction_notes', 'usage_instructions', 'food_interaction', 'alcohol_warning',
+        'overdose_effects', 'therapeutic_class', 'storage_conditions',
+        'medex_url',
         'tenant_id', 'is_global', 'created_by', 'status',
     ];
 

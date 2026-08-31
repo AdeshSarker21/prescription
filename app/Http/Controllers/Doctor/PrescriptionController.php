@@ -1160,7 +1160,7 @@ class PrescriptionController extends Controller
         //     abort(403);
         // }
 
-        $prescription->load(['doctor', 'patient', 'items.medicine', 'items.seal', 'advice', 'advices', 'complaints', 'tests', 'testReports', 'testReportResults']);
+        $prescription->load(['doctor', 'patient', 'items.medicine.category', 'items.seal', 'advice', 'advices', 'complaints', 'tests', 'testReports', 'testReportResults', 'procedures', 'treatmentPlans']);
 
         $doctorSetting = \App\Models\DoctorPrescriptionSetting::firstOrCreate(['doctor_id' => $prescription->doctor_id]);
         $customHeader = null;

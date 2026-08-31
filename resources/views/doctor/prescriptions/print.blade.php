@@ -230,7 +230,40 @@
                         $spo2Str = $spo2 ? number_format($spo2, 1) . '%' : '';
                         $ht = $prescription->height ? number_format($prescription->height, 1) . ' cm' : '';
                         $wt = $prescription->weight ? number_format($prescription->weight, 2) . ' kg' : '';
+
+                        $hasFamilyHistory = false;
+                        if (!empty($prescription->family_history_data)) {
+                            $fhd = $prescription->family_history_data;
+                            $hasFamilyHistory = (!empty($fhd['diseases']) && count($fhd['diseases']) > 0) || (!empty(trim($fhd['notes'] ?? '')));
+                        }
+
+                        $hasMenstrualHistory = false;
+                        if (!empty($prescription->menstrual_history_data)) {
+                            $mhd = $prescription->menstrual_history_data;
+                            $hasMenstrualHistory = !empty(trim($mhd['lmp'] ?? '')) || !empty(trim($mhd['cycle'] ?? '')) || !empty(trim($mhd['duration'] ?? '')) || !empty(trim($mhd['flow'] ?? '')) || !empty(trim($mhd['notes'] ?? ''));
+                        }
+
+                        $hasDrugHistory = false;
+                        if (!empty($prescription->drug_history_data)) {
+                            $dhd = $prescription->drug_history_data;
+                            $hasDrugHistory = (!empty($dhd['drugs']) && count($dhd['drugs']) > 0) || (!empty(trim($dhd['notes'] ?? '')));
+                        }
+
+                        $hasOtNote = false;
+                        if (!empty($prescription->ot_note_data)) {
+                            $otd = $prescription->ot_note_data;
+                            $hasOtNote = !empty(trim($otd['procedure'] ?? '')) || !empty(trim($otd['date'] ?? '')) || !empty(trim($otd['notes'] ?? ''));
+                        }
+
+                        $hasAnesthesia = false;
+                        if (!empty($prescription->anesthesia_data)) {
+                            $anest = $prescription->anesthesia_data;
+                            $hasAnesthesia = !empty(trim($anest['type'] ?? '')) || !empty(trim($anest['agent'] ?? '')) || !empty(trim($anest['dose'] ?? '')) || !empty(trim($anest['notes'] ?? ''));
+                        }
+
+                        $hasAdvice = $prescription->advices->count() > 0 || $prescription->advice->count() > 0 || !empty(trim($prescription->follow_up_instructions ?? ''));
                     @endphp
+
                     @if($bp || $pulseStr || $spo2Str || $ht || $wt)
                     <div class="section-label">Vitals</div>
                     <div style="font-size:10px;margin-bottom:6px;display:flex;gap:12px;flex-wrap:wrap;">
@@ -241,24 +274,24 @@
                         @if($wt)<span><strong>Wt:</strong> {{ $wt }}</span>@endif
                     </div>
                     @endif
+
+                    @if($prescription->complaints->count() > 0)
                     <div class="section-label">Chief Complaint</div>
                     <ul style="margin:4px 0 8px 0;padding-left:16px;font-size:10px;">
-                        @forelse($prescription->complaints as $complaint)
+                        @foreach($prescription->complaints as $complaint)
                         <li>{{ $complaint->name }}@if($complaint->pivot?->notes) ({{ $complaint->pivot->notes }})@endif</li>
-                        @empty
-                        <li style="color:#999;">—</li>
-                        @endforelse
+                        @endforeach
                     </ul>
+                    @endif
+
+                    @if($prescription->tests->count() > 0)
                     <div class="section-label">On Examinations</div>
                     <ul style="margin:4px 0 8px 0;padding-left:16px;font-size:10px;">
-                        @forelse($prescription->tests as $test)
+                        @foreach($prescription->tests as $test)
                         <li>{{ $test->test_name }}</li>
-                        @empty
-                        <li style="color:#999;">—</li>
-                        @endforelse
+                        @endforeach
                     </ul>
-
-                    
+                    @endif
 
                     @php
                         $reportGroups = $prescription->testReports->groupBy('test_name');
@@ -290,121 +323,138 @@
                     </div>
                     @endif
 
-                    @php
-                        $featureSetting = \App\Models\DoctorFeatureSetting::getForDoctor($prescription->doctor_id);
-                    @endphp
-
-                    @if($featureSetting->family_history && $prescription->family_history_data)
+                    @if($hasFamilyHistory)
                     <div class="section-label">Family History</div>
                     <div style="font-size:10px;margin-bottom:6px;">
-                        @if($prescription->family_history_data['diseases'] ?? null)
+                        @if(!empty($prescription->family_history_data['diseases']))
                             @foreach($prescription->family_history_data['diseases'] as $disease)
+                                @if(!empty(trim($disease['name'] ?? '')))
                                 <span style="display:inline-block;padding:1px 6px;background:#e8f5e9;border:1px solid #81c784;border-radius:4px;font-size:10px;margin:1px;">
-                                    {{ $disease['name'] ?? '' }}@if($disease['relation'] ?? null) ({{ $disease['relation'] }})@endif
+                                    {{ $disease['name'] }}@if(!empty($disease['relation'])) ({{ $disease['relation'] }})@endif
                                 </span>
+                                @endif
                             @endforeach
                         @endif
-                        @if($prescription->family_history_data['notes'] ?? null)
+                        @if(!empty(trim($prescription->family_history_data['notes'] ?? '')))
                             <div style="margin-top:2px;color:#666;">{{ $prescription->family_history_data['notes'] }}</div>
                         @endif
                     </div>
                     @endif
 
-                    @if($featureSetting->menstrual_history && $prescription->menstrual_history_data)
+                    @if($hasMenstrualHistory)
                     <div class="section-label">Menstrual History</div>
                     <div style="font-size:10px;margin-bottom:6px;">
-                        @if($prescription->menstrual_history_data['lmp'] ?? null)
+                        @if(!empty(trim($prescription->menstrual_history_data['lmp'] ?? '')))
                             <span><strong>LMP:</strong> {{ $prescription->menstrual_history_data['lmp'] }}</span><br>
                         @endif
-                        @if($prescription->menstrual_history_data['cycle'] ?? null)
+                        @if(!empty(trim($prescription->menstrual_history_data['cycle'] ?? '')))
                             <span><strong>Cycle:</strong> {{ $prescription->menstrual_history_data['cycle'] }}</span><br>
                         @endif
-                        @if($prescription->menstrual_history_data['duration'] ?? null)
+                        @if(!empty(trim($prescription->menstrual_history_data['duration'] ?? '')))
                             <span><strong>Duration:</strong> {{ $prescription->menstrual_history_data['duration'] }}</span><br>
                         @endif
-                        @if($prescription->menstrual_history_data['flow'] ?? null)
+                        @if(!empty(trim($prescription->menstrual_history_data['flow'] ?? '')))
                             <span><strong>Flow:</strong> {{ $prescription->menstrual_history_data['flow'] }}</span><br>
                         @endif
-                        @if($prescription->menstrual_history_data['notes'] ?? null)
+                        @if(!empty(trim($prescription->menstrual_history_data['notes'] ?? '')))
                             <div style="margin-top:2px;color:#666;">{{ $prescription->menstrual_history_data['notes'] }}</div>
                         @endif
                     </div>
                     @endif
 
-                    @if($featureSetting->drug_history && $prescription->drug_history_data)
+                    @if($hasDrugHistory)
                     <div class="section-label">Drug History</div>
                     <div style="font-size:10px;margin-bottom:6px;">
-                        @if($prescription->drug_history_data['drugs'] ?? null)
+                        @if(!empty($prescription->drug_history_data['drugs']))
                             @foreach($prescription->drug_history_data['drugs'] as $drug)
+                                @if(!empty(trim($drug['name'] ?? '')))
                                 <span style="display:inline-block;padding:1px 6px;background:#fff3e0;border:1px solid #ffb74d;border-radius:4px;font-size:10px;margin:1px;">
-                                    {{ $drug['name'] ?? '' }}@if($drug['dose'] ?? null) {{ $drug['dose'] }}@endif
+                                    {{ $drug['name'] }}@if(!empty(trim($drug['dose'] ?? ''))) {{ $drug['dose'] }}@endif
                                 </span>
+                                @endif
                             @endforeach
                         @endif
-                        @if($prescription->drug_history_data['notes'] ?? null)
+                        @if(!empty(trim($prescription->drug_history_data['notes'] ?? '')))
                             <div style="margin-top:2px;color:#666;">{{ $prescription->drug_history_data['notes'] }}</div>
                         @endif
                     </div>
                     @endif
 
-                    @if($featureSetting->ot_note && $prescription->ot_note_data)
+                    @if($hasOtNote)
                     <div class="section-label">OT Note / Procedure Done</div>
                     <div style="font-size:10px;margin-bottom:6px;">
-                        @if($prescription->ot_note_data['procedure'] ?? null)
+                        @if(!empty(trim($prescription->ot_note_data['procedure'] ?? '')))
                             <span><strong>Procedure:</strong> {{ $prescription->ot_note_data['procedure'] }}</span><br>
                         @endif
-                        @if($prescription->ot_note_data['date'] ?? null)
+                        @if(!empty(trim($prescription->ot_note_data['date'] ?? '')))
                             <span><strong>Date:</strong> {{ $prescription->ot_note_data['date'] }}</span><br>
                         @endif
-                        @if($prescription->ot_note_data['notes'] ?? null)
+                        @if(!empty(trim($prescription->ot_note_data['notes'] ?? '')))
                             <div style="margin-top:2px;color:#666;">{{ $prescription->ot_note_data['notes'] }}</div>
                         @endif
                     </div>
                     @endif
 
-                    @if($featureSetting->anesthesia && $prescription->anesthesia_data)
+                    @if($hasAnesthesia)
                     <div class="section-label">Anesthesia (LA / Surface)</div>
                     <div style="font-size:10px;margin-bottom:6px;">
-                        @if($prescription->anesthesia_data['type'] ?? null)
+                        @if(!empty(trim($prescription->anesthesia_data['type'] ?? '')))
                             <span><strong>Type:</strong> {{ $prescription->anesthesia_data['type'] }}</span><br>
                         @endif
-                        @if($prescription->anesthesia_data['agent'] ?? null)
+                        @if(!empty(trim($prescription->anesthesia_data['agent'] ?? '')))
                             <span><strong>Agent:</strong> {{ $prescription->anesthesia_data['agent'] }}</span><br>
                         @endif
-                        @if($prescription->anesthesia_data['dose'] ?? null)
+                        @if(!empty(trim($prescription->anesthesia_data['dose'] ?? '')))
                             <span><strong>Dose:</strong> {{ $prescription->anesthesia_data['dose'] }}</span><br>
                         @endif
-                        @if($prescription->anesthesia_data['notes'] ?? null)
+                        @if(!empty(trim($prescription->anesthesia_data['notes'] ?? '')))
                             <div style="margin-top:2px;color:#666;">{{ $prescription->anesthesia_data['notes'] }}</div>
                         @endif
                     </div>
                     @endif
 
-                    
-                    <div style="margin-top:auto;font-size:11px;color:#333;line-height:1.8;">
-                        <div class="section-label">পরামর্শ ও ফলো-আপ</div>
-                    <div style="font-size:10px;margin-bottom:6px;">
-                        @forelse($prescription->advices as $advice)
-                        <span class="advice-tag">{{ $advice->name }}</span>
-                        @empty
-                        @forelse($prescription->advice as $advice)
-                        <span class="advice-tag">{{ $advice->advice }}</span>
-                        @empty
-                        <span style="color:#999;font-size:10px;">—</span>
-                        @endforelse
-                        @endforelse
-                        @if($prescription->follow_up_instructions)
-                        <div style="margin-top:4px;color:#1a5a3a;">{{ $prescription->follow_up_instructions }}</div>
-                        @endif
-                       
-                    </div>
+                    @if($prescription->procedures->count() > 0)
+                    <div class="section-label">Procedure</div>
+                    <ul style="margin:4px 0 8px 0;padding-left:16px;font-size:10px;">
+                        @foreach($prescription->procedures as $procedure)
+                            @if(!empty(trim($procedure->procedure_name ?? '')))
+                            <li>{{ $procedure->procedure_name }}</li>
+                            @endif
+                        @endforeach
+                    </ul>
+                    @endif
 
-                        <div class="cb-row"><input type="checkbox" checked> <span>নির্দেশনা মোতাবেক ঔষধ সেবন করাবেন।</span></div>
-                        <div class="cb-row red"><input type="checkbox" checked> <span>পরামর্শ ছাড়া ঔষধ বন্ধ করবেন না।</span></div>
-                        <div class="cb-row"><input type="checkbox" checked> <span>সঠিক সময় চিকিৎসা মানসিক রোগ নিরাময় সম্ভব।</span></div>
-                        <div class="cb-row"><input type="checkbox" checked> <span>মানসিক রোগীর প্রতি সহানুভূতিশীল হউন।</span></div>
-                        <div class="cb-row"><input type="checkbox" checked> <span>পরবর্তী সাক্ষাতের সময় প্রেসক্রিপশন সহ যাবতীয় পরীক্ষার কাগজ সঙ্গে আনবেন।</span></div>
+                    @if($prescription->treatmentPlans->count() > 0)
+                    <div class="section-label">Treatment Plan</div>
+                    <ul style="margin:4px 0 8px 0;padding-left:16px;font-size:10px;">
+                        @foreach($prescription->treatmentPlans as $plan)
+                            @if(!empty(trim($plan->treatment_plan_name ?? '')))
+                            <li>{{ $plan->treatment_plan_name }}</li>
+                            @endif
+                        @endforeach
+                    </ul>
+                    @endif
+
+                    @if($hasAdvice)
+                    <div style="font-size:11px;color:#333;line-height:1.8;">
+                        <div class="section-label">পরামর্শ ও ফলো-আপ</div>
+                        <div style="font-size:10px;margin-bottom:6px;">
+                            @if($prescription->advices->count() > 0 || $prescription->advice->count() > 0)
+                            <ul style="margin:0;padding-left:16px;list-style-type:disc;">
+                                @foreach($prescription->advices as $advice)
+                                <li>{{ $advice->name }}</li>
+                                @endforeach
+                                @foreach($prescription->advice as $advice)
+                                <li>{{ $advice->advice }}</li>
+                                @endforeach
+                            </ul>
+                            @endif
+                            @if(!empty(trim($prescription->follow_up_instructions ?? '')))
+                            <div style="margin-top:4px;color:#555;">{{ $prescription->follow_up_instructions }}</div>
+                            @endif
+                        </div>
                     </div>
+                    @endif
                 </div>
 
                 <div class="right-panel">
@@ -428,7 +478,21 @@
                             @else
                             <tr>
                                 <td class="med-name">
-                                    <strong>{{ $item->medicine_name }}{{ $item->dosage && !str_contains($item->medicine_name, $item->dosage) ? ' ' . $item->dosage : '' }}</strong>
+                                    @php
+                                        $catName = $item->medicine?->category?->name ?? '';
+                                        $catAbbr = match($catName) {
+                                            'Tablet' => 'Tab',
+                                            'Capsule' => 'Cap',
+                                            'Syrup' => 'Syr',
+                                            'Injection' => 'Inj',
+                                            'Cream' => 'Cream',
+                                            'Drops' => 'Drop',
+                                            'Ointment' => 'Oint',
+                                            'Gel' => 'Gel',
+                                            default => $catName ? ucfirst(mb_substr($catName, 0, 3)) : '',
+                                        };
+                                    @endphp
+                                    <strong>{{ $catAbbr ? $catAbbr . '. ' : '' }}{{ $item->medicine_name }}{{ $item->dosage && !str_contains($item->medicine_name, $item->dosage) ? ' ' . $item->dosage : '' }}</strong>
                                     @if($item->seal_text)
                                     <br><span style="font-weight:bold;font-size:11px;color:#333;">{{ $item->seal_text }}</span>
                                     @endif
